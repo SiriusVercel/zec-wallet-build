@@ -1,25 +1,40 @@
 {
   "expo": {
-    "name": "zec-wallet",
-    "slug": "zec-wallet",
+    "name": "Zcash Wallet",
+    "slug": "zcash-wallet",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1A1209"
+    },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": false,
+      "bundleIdentifier": "com.zecwallet.app",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "Use Face ID to unlock your Zcash Wallet and protect your seed phrase",
+        "NSCameraUsageDescription": "Scan QR codes to quickly enter Zcash addresses"
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#F4B728"
       },
-      "predictiveBackGestureEnabled": false
+      "package": "com.zecwallet.app",
+      "permissions": ["USE_BIOMETRIC", "USE_FINGERPRINT", "CAMERA"]
     },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    }
+    "plugins": [
+      "expo-secure-store",
+      "expo-local-authentication",
+      [
+        "expo-camera",
+        { "cameraPermission": "Scan QR codes to quickly enter Zcash addresses" }
+      ]
+    ]
   }
 }
