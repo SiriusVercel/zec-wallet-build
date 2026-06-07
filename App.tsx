@@ -1,3 +1,4 @@
+import './src/i18n'
 import React, { useEffect, useState } from 'react'
 import { ActivityIndicator, View, StyleSheet } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
