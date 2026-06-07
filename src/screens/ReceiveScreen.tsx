@@ -3,6 +3,8 @@ import {
   View, Text, StyleSheet, SafeAreaView, ScrollView,
   TouchableOpacity, ActivityIndicator, Share,
 } from 'react-native'
+import { useTranslation } from 'react-i18next'
+import * as Haptics from 'expo-haptics'
 import * as Clipboard from 'expo-clipboard'
 import QRCode from 'react-native-qrcode-svg'
 import { Colors, Typography, Spacing, Radius } from '../theme'
@@ -13,6 +15,7 @@ interface Props { onBack: () => void }
 type Pool = 'shielded' | 'transparent'
 
 export default function ReceiveScreen({ onBack }: Props) {
+  const { t } = useTranslation()
   const [address,  setAddress]  = useState<string>('')
   const [loading,  setLoading]  = useState<boolean>(true)
   const [pool,     setPool]     = useState<Pool>('shielded')
@@ -41,9 +44,9 @@ export default function ReceiveScreen({ onBack }: Props) {
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={onBack}>
-            <Text style={styles.back}>← Back</Text>
+            <Text style={styles.back}>{`← ${t('common.back')}`}</Text>
           </TouchableOpacity>
-          <Text style={styles.title}>Receive ZEC</Text>
+          <Text style={styles.title}>{t('receive.title')}</Text>
           <View style={{ width: 60 }} />
         </View>
 
@@ -56,7 +59,7 @@ export default function ReceiveScreen({ onBack }: Props) {
               onPress={() => setPool(p)}
             >
               <Text style={[styles.poolBtnLabel, pool === p && styles.poolBtnLabelActive]}>
-                {p === 'shielded' ? 'Shielded' : 'Transparent'}
+                {p === 'shielded' ? t('receive.shielded') : t('receive.transparent')}
               </Text>
             </TouchableOpacity>
           ))}
@@ -66,7 +69,7 @@ export default function ReceiveScreen({ onBack }: Props) {
         {pool === 'transparent' && (
           <View style={styles.warnCard}>
             <Text style={styles.warnText}>
-              ⚠️ Transparent addresses are visible on the public blockchain. Use shielded for privacy.
+              ⚠️ {t('receive.transparentWarning')}
             </Text>
           </View>
         )}
@@ -102,26 +105,26 @@ export default function ReceiveScreen({ onBack }: Props) {
         <View style={styles.actions}>
           <TouchableOpacity
             style={[styles.actionBtn, styles.actionPrimary]}
-            onPress={copyAddress}
+            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); copyAddress() }}
             disabled={loading || !address}
           >
             <Text style={styles.actionLabelPrimary}>
-              {copied ? '✓ Copied' : 'Copy'}
+              {copied ? `✓ ${t('receive.copied')}` : t('receive.copy')}
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.actionBtn}
-            onPress={shareAddress}
+            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); shareAddress() }}
             disabled={loading || !address}
           >
-            <Text style={styles.actionLabel}>Share</Text>
+            <Text style={styles.actionLabel}>{t('receive.share')}</Text>
           </TouchableOpacity>
         </View>
 
         {/* Done */}
-        <TouchableOpacity style={styles.doneBtn} onPress={onBack}>
-          <Text style={styles.doneBtnLabel}>Done</Text>
+        <TouchableOpacity style={styles.doneBtn} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); onBack() }}>
+          <Text style={styles.doneBtnLabel}>{t('receive.done')}</Text>
         </TouchableOpacity>
 
       </ScrollView>

@@ -4,6 +4,8 @@ import {
   View, Text, StyleSheet, SafeAreaView, ScrollView,
   TouchableOpacity, RefreshControl,
 } from 'react-native'
+import { useTranslation } from 'react-i18next'
+import * as Haptics from 'expo-haptics'
 import { Colors, Typography, Spacing, Radius } from '../theme'
 import { Skeleton } from '../components/Skeleton'
 import { getWalletInfo } from '../services/zcash'
@@ -17,6 +19,7 @@ interface Props {
 }
 
 export default function HomeScreen({ onSend, onReceive, onScan }: Props) {
+  const { t } = useTranslation()
   const [loading,    setLoading]    = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [error,      setError]      = useState<string | null>(null)
@@ -76,7 +79,7 @@ export default function HomeScreen({ onSend, onReceive, onScan }: Props) {
         {isSyncing && (
           <View style={styles.syncBadge}>
             <Text style={styles.syncDot}>○</Text>
-            <Text style={styles.syncText}>Syncing {sync!.percent.toFixed(0)}%</Text>
+            <Text style={styles.syncText}>{t('home.syncing', { percent: sync!.percent.toFixed(0) })}</Text>
           </View>
         )}
 
@@ -84,13 +87,13 @@ export default function HomeScreen({ onSend, onReceive, onScan }: Props) {
         {error !== null && (
           <View style={styles.errorBox}>
             <Text style={styles.errorText}>{error}</Text>
-            <Text style={styles.errorHint}>Puxe para baixo para tentar novamente</Text>
+            <Text style={styles.errorHint}>{t('home.errorLoading')}</Text>
           </View>
         )}
 
         {/* Balance Card */}
         <View style={styles.balanceCard}>
-          <Text style={styles.balanceLabel}>Total balance</Text>
+          <Text style={styles.balanceLabel}>{t('home.totalBalance')}</Text>
 
           {loading ? (
             <>
@@ -111,25 +114,25 @@ export default function HomeScreen({ onSend, onReceive, onScan }: Props) {
 
         {/* Action Buttons */}
         <View style={styles.actions}>
-          <TouchableOpacity style={styles.actionSend} onPress={onSend} activeOpacity={0.85}>
+          <TouchableOpacity style={styles.actionSend} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); onSend() }} activeOpacity={0.85}>
             <Text style={styles.actionIconSend}>↑</Text>
-            <Text style={styles.actionLabelDark}>Send</Text>
+            <Text style={styles.actionLabelDark}>{t('home.send')}</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.actionReceive} onPress={onReceive} activeOpacity={0.85}>
+          <TouchableOpacity style={styles.actionReceive} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); onReceive() }} activeOpacity={0.85}>
             <Text style={styles.actionIconReceive}>↓</Text>
-            <Text style={styles.actionLabel}>Receive</Text>
+            <Text style={styles.actionLabel}>{t('home.receive')}</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.actionScan} onPress={onScan} activeOpacity={0.85}>
+          <TouchableOpacity style={styles.actionScan} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); onScan() }} activeOpacity={0.85}>
             <Text style={styles.actionIconScan}>⊡</Text>
-            <Text style={styles.actionLabel}>Scan</Text>
+            <Text style={styles.actionLabel}>{t('home.scan')}</Text>
           </TouchableOpacity>
         </View>
 
         {/* Price Row */}
         <View style={styles.priceCard}>
-          <Text style={styles.priceLabel}>ZEC / USD</Text>
+          <Text style={styles.priceLabel}>{t('home.zecPrice')}</Text>
           {loading ? (
             <Skeleton width={80} height={18} borderRadius={6} />
           ) : (
