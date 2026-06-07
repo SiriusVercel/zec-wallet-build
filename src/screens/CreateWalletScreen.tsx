@@ -4,6 +4,7 @@ import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   ActivityIndicator, Alert,
 } from 'react-native'
+import { useTranslation } from 'react-i18next'
 import { Colors } from '../theme'
 import { generateWallet } from '../services/zingo'
 import { saveSeed, saveWalletInfo } from '../services/zcash'
@@ -35,6 +36,7 @@ interface Props {
 }
 
 export function CreateWalletScreen({ onDone, onBack }: Props) {
+  const { t } = useTranslation()
   const [step, setStep] = useState<Step>('generating')
   const [words, setWords] = useState<string[]>([])
   const [walletData, setWalletData] = useState<{ address: string; ufvk: string; birthday: number } | null>(null)
@@ -72,7 +74,7 @@ export function CreateWalletScreen({ onDone, onBack }: Props) {
   const submitQuiz = async () => {
     const allCorrect = quiz.every(q => answers[q.index] === q.correct)
     if (!allCorrect) {
-      Alert.alert('Incorrect', 'Some answers are wrong. Review your recovery phrase and try again.')
+      Alert.alert(t('common.error'), t('createWallet.incorrectAnswers'))
       setAnswers({})
       return
     }
@@ -81,7 +83,7 @@ export function CreateWalletScreen({ onDone, onBack }: Props) {
       await saveWalletInfo(walletData!)
       setStep('done')
     } catch (e: any) {
-      Alert.alert('Error', e.message || 'Failed to save wallet')
+      Alert.alert(t('common.error'), e.message || 'Failed to save wallet')
     }
   }
 
@@ -92,13 +94,13 @@ export function CreateWalletScreen({ onDone, onBack }: Props) {
           <>
             <Text style={styles.errorText}>{error}</Text>
             <TouchableOpacity style={styles.btn} onPress={generate}>
-              <Text style={styles.btnText}>Retry</Text>
+              <Text style={styles.btnText}>{t('createWallet.retry')}</Text>
             </TouchableOpacity>
           </>
         ) : (
           <>
             <ActivityIndicator size="large" color={Colors.zec} />
-            <Text style={styles.subtitle}>Generating your wallet...</Text>
+            <Text style={styles.subtitle}>{t('createWallet.generating')}</Text>
           </>
         )}
       </View>
@@ -108,10 +110,8 @@ export function CreateWalletScreen({ onDone, onBack }: Props) {
   if (step === 'backup') {
     return (
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Your Recovery Phrase</Text>
-        <Text style={styles.subtitle}>
-          Write these 24 words down in order. This is the only way to recover your wallet.
-        </Text>
+        <Text style={styles.title}>{t('createWallet.title')}</Text>
+        <Text style={styles.subtitle}>{t('createWallet.subtitle')}</Text>
         <View style={styles.wordsGrid}>
           {words.map((word, i) => (
             <View key={i} style={styles.wordCell}>
@@ -121,10 +121,10 @@ export function CreateWalletScreen({ onDone, onBack }: Props) {
           ))}
         </View>
         <TouchableOpacity style={styles.btn} onPress={startQuiz}>
-          <Text style={styles.btnText}>{"I've Written It Down →"}</Text>
+          <Text style={styles.btnText}>{t('createWallet.written')}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.backBtn} onPress={onBack}>
-          <Text style={styles.backText}>Back</Text>
+          <Text style={styles.backText}>{t('createWallet.back')}</Text>
         </TouchableOpacity>
       </ScrollView>
     )
@@ -134,11 +134,11 @@ export function CreateWalletScreen({ onDone, onBack }: Props) {
     const allAnswered = quiz.every(q => answers[q.index] !== undefined)
     return (
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Verify Your Backup</Text>
-        <Text style={styles.subtitle}>Select the correct word for each position.</Text>
+        <Text style={styles.title}>{t('createWallet.verifyTitle')}</Text>
+        <Text style={styles.subtitle}>{t('createWallet.verifySubtitle')}</Text>
         {quiz.map((q, qi) => (
           <View key={qi} style={styles.quizBlock}>
-            <Text style={styles.quizLabel}>Word #{q.index + 1}</Text>
+            <Text style={styles.quizLabel}>{t('createWallet.wordPosition', { n: q.index + 1 })}</Text>
             <View style={styles.optionsRow}>
               {q.options.map(opt => (
                 <TouchableOpacity
@@ -165,7 +165,7 @@ export function CreateWalletScreen({ onDone, onBack }: Props) {
           onPress={submitQuiz}
           disabled={!allAnswered}
         >
-          <Text style={styles.btnText}>Confirm</Text>
+          <Text style={styles.btnText}>{t('createWallet.confirm')}</Text>
         </TouchableOpacity>
       </ScrollView>
     )
@@ -174,10 +174,10 @@ export function CreateWalletScreen({ onDone, onBack }: Props) {
   return (
     <View style={styles.center}>
       <Text style={styles.doneIcon}>✓</Text>
-      <Text style={styles.title}>Wallet Created!</Text>
-      <Text style={styles.subtitle}>Your wallet is ready. Keep your recovery phrase safe.</Text>
+      <Text style={styles.title}>{t('createWallet.successTitle')}</Text>
+      <Text style={styles.subtitle}>{t('createWallet.successSubtitle')}</Text>
       <TouchableOpacity style={styles.btn} onPress={onDone}>
-        <Text style={styles.btnText}>Go to Wallet</Text>
+        <Text style={styles.btnText}>{t('createWallet.goToWallet')}</Text>
       </TouchableOpacity>
     </View>
   )

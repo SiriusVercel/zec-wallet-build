@@ -11,6 +11,7 @@ import {
   Dimensions,
 } from 'react-native'
 import Svg, { Polyline, Line as SvgLine, Text as SvgText } from 'react-native-svg'
+import { useTranslation } from 'react-i18next'
 import { Colors, Spacing, Radius, Typography } from '../theme'
 import { BottomTabs, Tab } from '../components/BottomTabs'
 import { getCurrentPrice, getPriceHistory, zecToUsd, PricePoint, Period } from '../services/price'
@@ -33,10 +34,11 @@ interface Props {
 
 // ─── Gráfico de linha SVG puro ────────────────────────────────────────────────
 function PriceLineChart({ data }: { data: PricePoint[] }) {
+  const { t } = useTranslation()
   if (data.length < 2) {
     return (
       <View style={chartStyles.empty}>
-        <Text style={chartStyles.emptyText}>Sem dados para exibir</Text>
+        <Text style={chartStyles.emptyText}>{t('trending.loading')}</Text>
       </View>
     )
   }
@@ -133,6 +135,7 @@ function PriceLineChart({ data }: { data: PricePoint[] }) {
 
 // ─── Tela principal ───────────────────────────────────────────────────────────
 export default function TrendingScreen({ onTab }: Props) {
+  const { t } = useTranslation()
   const [period,        setPeriod]        = useState<Period>('24H')
   const [price,         setPrice]         = useState<number | null>(null)
   const [history,       setHistory]       = useState<PricePoint[]>([])
@@ -194,13 +197,15 @@ export default function TrendingScreen({ onTab }: Props) {
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Trending</Text>
+        <Text style={styles.title}>{t('trending.title')}</Text>
 
         {/* ── Preço atual ──────────────────────────────────────────── */}
         <View style={styles.priceHero}>
           <View style={styles.priceRow}>
             {loadingPrice ? (
               <ActivityIndicator color={Colors.zec} size="large" />
+            ) : price === null ? (
+              <Text style={styles.priceSub}>{t('trending.errorLoading')}</Text>
             ) : (
               <Text style={styles.priceUsd}>
                 ${priceUsd.toFixed(2)}
@@ -220,7 +225,7 @@ export default function TrendingScreen({ onTab }: Props) {
               </View>
             )}
           </View>
-          <Text style={styles.priceSub}>ZEC / USD · {period}</Text>
+          <Text style={styles.priceSub}>{t('trending.price')} · {period}</Text>
         </View>
 
         {/* ── Saldo da carteira ────────────────────────────────────── */}
@@ -230,7 +235,7 @@ export default function TrendingScreen({ onTab }: Props) {
               <View style={styles.walletIcon}>
                 <Text style={{ fontSize: 16 }}>📋</Text>
               </View>
-              <Text style={styles.balanceLabel}>Seu saldo</Text>
+              <Text style={styles.balanceLabel}>{t('trending.yourBalance')}</Text>
             </View>
             <View style={styles.balanceRight}>
               <Text style={styles.balanceZec}>{balanceZec} ZEC</Text>
@@ -246,7 +251,7 @@ export default function TrendingScreen({ onTab }: Props) {
 
         {/* ── Gráfico ──────────────────────────────────────────────── */}
         <View style={styles.chartSection}>
-          <Text style={styles.chartTitle}>Gráfico de preço</Text>
+          <Text style={styles.chartTitle}>{t('trending.title')}</Text>
 
           {/* Seletor de período */}
           <View style={styles.periodRow}>
@@ -257,7 +262,7 @@ export default function TrendingScreen({ onTab }: Props) {
                 onPress={() => setPeriod(p)}
               >
                 <Text style={[styles.periodLabel, period === p && styles.periodLabelActive]}>
-                  {p}
+                  {p === '24H' ? t('trending.period24h') : p === '7D' ? t('trending.period7d') : p === '30D' ? t('trending.period30d') : t('trending.period1y')}
                 </Text>
               </TouchableOpacity>
             ))}

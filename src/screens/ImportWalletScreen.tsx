@@ -4,6 +4,7 @@ import {
   TouchableOpacity, Alert, TextInput, KeyboardAvoidingView,
   Platform, ActivityIndicator,
 } from 'react-native'
+import { useTranslation } from 'react-i18next'
 import { Colors, Typography, Spacing, Radius } from '../theme'
 import { deriveWallet } from '../services/zingo'
 import { saveSeed, saveWalletInfo } from '../services/zcash'
@@ -19,6 +20,7 @@ function getInvalidWords(words: string[]): string[] {
 }
 
 export default function ImportWalletScreen({ onDone, onBack }: Props) {
+  const { t } = useTranslation()
   const [phrase,   setPhrase]   = useState('')
   const [birthday, setBirthday] = useState('')
   const [loading,  setLoading]  = useState(false)
@@ -58,7 +60,7 @@ export default function ImportWalletScreen({ onDone, onBack }: Props) {
       onDone()
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Unknown error'
-      Alert.alert('Restore Failed', msg)
+      Alert.alert(t('common.error'), msg)
     } finally {
       setLoading(false)
     }
@@ -77,28 +79,26 @@ export default function ImportWalletScreen({ onDone, onBack }: Props) {
           {/* Header */}
           <View style={styles.header}>
             <TouchableOpacity onPress={onBack} style={styles.backBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-              <Text style={styles.backLabel}>← Back</Text>
+              <Text style={styles.backLabel}>← {t('importWallet.back')}</Text>
             </TouchableOpacity>
           </View>
 
-          <Text style={styles.title}>Restore Wallet</Text>
-          <Text style={styles.subtitle}>
-            Enter your 12 or 24-word BIP39 recovery phrase to restore access to your ZEC.
-          </Text>
+          <Text style={styles.title}>{t('importWallet.title')}</Text>
+          <Text style={styles.subtitle}>{t('importWallet.subtitle')}</Text>
 
           {/* Recovery phrase input */}
           <View style={styles.inputWrap}>
             <View style={styles.inputHeader}>
               <Text style={styles.inputLabel}>Recovery Phrase</Text>
               <Text style={[styles.wordCount, { color: wordCountColor }]}>
-                {wordCount} {countOk ? '✓' : ''} word{wordCount !== 1 ? 's' : ''}
+                {t('importWallet.wordCount', { count: wordCount, total: countOk ? '✓' : (wordCount < 12 ? 12 : 24) })}
               </Text>
             </View>
 
             <TextInput
               value={phrase}
               onChangeText={setPhrase}
-              placeholder="Enter your recovery words separated by spaces..."
+              placeholder={t('importWallet.placeholder')}
               placeholderTextColor={Colors.textMuted}
               multiline
               autoCorrect={false}
@@ -115,8 +115,7 @@ export default function ImportWalletScreen({ onDone, onBack }: Props) {
             {shownInvalid.length > 0 && (
               <View style={styles.errorWrap}>
                 <Text style={styles.errorLabel}>
-                  Invalid word{shownInvalid.length > 1 ? 's' : ''}:{' '}
-                  <Text style={styles.errorWords}>{shownInvalid.join(', ')}</Text>
+                  {t('importWallet.invalidWords', { words: shownInvalid.join(', ') })}
                   {invalidWords.length > 3 ? ` +${invalidWords.length - 3} more` : ''}
                 </Text>
               </View>
@@ -133,13 +132,13 @@ export default function ImportWalletScreen({ onDone, onBack }: Props) {
           {/* Birthday block (optional) */}
           <View style={styles.inputWrap}>
             <View style={styles.inputHeader}>
-              <Text style={styles.inputLabel}>Birthday Block</Text>
-              <Text style={styles.inputHint}>optional — speeds up sync</Text>
+              <Text style={styles.inputLabel}>{t('importWallet.birthdayLabel')}</Text>
+              <Text style={styles.inputHint}>{t('importWallet.birthdayHint')}</Text>
             </View>
             <TextInput
               value={birthday}
               onChangeText={setBirthday}
-              placeholder="e.g. 2500000"
+              placeholder={t('importWallet.birthdayPlaceholder')}
               placeholderTextColor={Colors.textMuted}
               keyboardType="number-pad"
               style={styles.singleInput}
@@ -150,7 +149,7 @@ export default function ImportWalletScreen({ onDone, onBack }: Props) {
           {loading ? (
             <View style={styles.loadingWrap}>
               <ActivityIndicator size="large" color={Colors.zec} />
-              <Text style={styles.loadingText}>Deriving wallet keys…</Text>
+              <Text style={styles.loadingText}>{t('importWallet.restoring')}</Text>
             </View>
           ) : (
             <TouchableOpacity
@@ -160,7 +159,7 @@ export default function ImportWalletScreen({ onDone, onBack }: Props) {
               activeOpacity={0.8}
             >
               <Text style={[styles.restoreBtnLabel, !canSubmit && styles.restoreBtnLabelDisabled]}>
-                Restore Wallet
+                {t('importWallet.restore')}
               </Text>
             </TouchableOpacity>
           )}

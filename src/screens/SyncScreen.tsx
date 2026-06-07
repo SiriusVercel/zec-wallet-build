@@ -7,6 +7,7 @@ import {
   SafeAreaView,
   TouchableOpacity,
 } from 'react-native'
+import { useTranslation } from 'react-i18next'
 import { Colors, Typography, Spacing, Radius } from '../theme'
 import { getSyncStatus, startSync, SyncStatus } from '../services/zingo'
 import { POLL_INTERVAL_MS, POLL_MAX_RETRIES } from '../config'
@@ -16,6 +17,7 @@ interface Props {
 }
 
 export default function SyncScreen({ onBack }: Props) {
+  const { t } = useTranslation()
   const [status,       setStatus]       = useState<SyncStatus | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
@@ -72,7 +74,7 @@ export default function SyncScreen({ onBack }: Props) {
       retriesRef.current = newErrors
 
       if (newErrors >= POLL_MAX_RETRIES) {
-        setErrorMessage('Sync timed out. Could not reach the node. Please try again.')
+        setErrorMessage(t('sync.error'))
         return
       }
       scheduleNextPoll(newErrors)
@@ -101,11 +103,8 @@ export default function SyncScreen({ onBack }: Props) {
           <Text style={styles.icon}>⚡</Text>
         </View>
 
-        <Text style={styles.title}>Syncing ZCash Wallet</Text>
-        <Text style={styles.subtitle}>
-          Downloading compact blocks from lightwalletd.{'\n'}
-          This may take a few minutes for new wallets.
-        </Text>
+        <Text style={styles.title}>{t('sync.title')}</Text>
+        <Text style={styles.subtitle}>{t('sync.subtitle')}</Text>
 
         {/* Progress bar */}
         <View style={styles.progressWrap}>
@@ -118,21 +117,21 @@ export default function SyncScreen({ onBack }: Props) {
         {/* Stats card */}
         <View style={styles.statsCard}>
           <View style={styles.statRow}>
-            <Text style={styles.statLabel}>BLOCKS</Text>
+            <Text style={styles.statLabel}>{t('sync.blocksSynced')}</Text>
             <Text style={styles.statValue}>{blocksText}</Text>
           </View>
 
           {etaMinutes !== null && (
             <View style={styles.statRow}>
-              <Text style={styles.statLabel}>ETA</Text>
+              <Text style={styles.statLabel}>{t('sync.eta')}</Text>
               <Text style={styles.statValue}>
-                {etaMinutes < 1 ? '< 1 min' : `~${etaMinutes} min`}
+                {etaMinutes < 1 ? t('sync.etaLess') : t('sync.etaMinutes', { n: etaMinutes })}
               </Text>
             </View>
           )}
 
           <View style={styles.statRow}>
-            <Text style={styles.statLabel}>NODE</Text>
+            <Text style={styles.statLabel}>{t('sync.node')}</Text>
             <Text style={styles.statValue}>na.zec.rocks:443</Text>
           </View>
 
@@ -151,7 +150,7 @@ export default function SyncScreen({ onBack }: Props) {
 
         {/* Back button */}
         <TouchableOpacity style={styles.backBtn} onPress={onBack}>
-          <Text style={styles.backBtnText}>Back</Text>
+          <Text style={styles.backBtnText}>{t('sync.back')}</Text>
         </TouchableOpacity>
 
         <Text style={styles.tip}>

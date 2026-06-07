@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
 } from 'react-native'
 import Svg, { Rect, Text as SvgText } from 'react-native-svg'
+import { useTranslation } from 'react-i18next'
 import { Colors, Spacing, Radius } from '../theme'
 import { BottomTabs, Tab } from '../components/BottomTabs'
 import { getTransactions, Transaction } from '../services/zingo'
@@ -36,6 +37,7 @@ const BAR_GAP = 8
 const CHART_H = 120
 
 export default function InsightsScreen({ onTab }: Props) {
+  const { t } = useTranslation()
   const [currency, setCurrency] = useState<Currency>('ZEC')
   const [loading,  setLoading]  = useState(true)
   const [txs,      setTxs]      = useState<Transaction[]>([])
@@ -93,7 +95,7 @@ export default function InsightsScreen({ onTab }: Props) {
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Insights</Text>
+        <Text style={styles.title}>{t('insights.title')}</Text>
 
         {/* ZEC / USD toggle */}
         <View style={styles.currencyToggle}>
@@ -104,7 +106,7 @@ export default function InsightsScreen({ onTab }: Props) {
               onPress={() => setCurrency(c)}
             >
               <Text style={[styles.currencyLabel, currency === c && styles.currencyLabelActive]}>
-                {c}
+                {c === 'ZEC' ? t('insights.toggleZec') : t('insights.toggleUsd')}
               </Text>
             </TouchableOpacity>
           ))}
@@ -116,7 +118,7 @@ export default function InsightsScreen({ onTab }: Props) {
           </View>
         ) : txs.length === 0 ? (
           <View style={styles.emptyWrap}>
-            <Text style={styles.emptyTitle}>No transactions yet</Text>
+            <Text style={styles.emptyTitle}>{t('insights.noTransactions')}</Text>
             <Text style={styles.emptyHint}>Send or receive ZEC to see your spending insights here.</Text>
           </View>
         ) : (
@@ -128,7 +130,7 @@ export default function InsightsScreen({ onTab }: Props) {
                   <View style={styles.statIconReceive}>
                     <Text style={styles.statIconText}>↓</Text>
                   </View>
-                  <Text style={styles.statLabelReceive}>Received</Text>
+                  <Text style={styles.statLabelReceive}>{t('insights.received')}</Text>
                 </View>
                 <Text style={styles.statAmount}>{fmt(received, price, currency)}</Text>
                 <Text style={styles.statSub}>{fmtSub(received, price, currency)}</Text>
@@ -139,7 +141,7 @@ export default function InsightsScreen({ onTab }: Props) {
                   <View style={styles.statIconSend}>
                     <Text style={styles.statIconText}>↑</Text>
                   </View>
-                  <Text style={styles.statLabelSend}>Sent</Text>
+                  <Text style={styles.statLabelSend}>{t('insights.sent')}</Text>
                 </View>
                 <Text style={styles.statAmount}>{fmt(sent, price, currency)}</Text>
                 <Text style={styles.statSub}>{fmtSub(sent, price, currency)}</Text>
@@ -150,7 +152,7 @@ export default function InsightsScreen({ onTab }: Props) {
             <View style={styles.netFlowCard}>
               <View style={styles.netFlowLeft}>
                 <Text style={{ fontSize: 18 }}>{netPositive ? '📈' : '📉'}</Text>
-                <Text style={styles.netFlowLabel}>Net Flow</Text>
+                <Text style={styles.netFlowLabel}>{t('insights.netFlow')}</Text>
               </View>
               <View style={styles.netFlowRight}>
                 <Text style={[styles.netFlowAmount, { color: netPositive ? Colors.success : Colors.error }]}>
@@ -168,11 +170,11 @@ export default function InsightsScreen({ onTab }: Props) {
               <View style={styles.chartLegend}>
                 <View style={styles.legendItem}>
                   <View style={[styles.legendDot, { backgroundColor: Colors.zec }]} />
-                  <Text style={styles.legendText}>Received</Text>
+                  <Text style={styles.legendText}>{t('insights.received')}</Text>
                 </View>
                 <View style={styles.legendItem}>
                   <View style={[styles.legendDot, { backgroundColor: Colors.error }]} />
-                  <Text style={styles.legendText}>Sent</Text>
+                  <Text style={styles.legendText}>{t('insights.sent')}</Text>
                 </View>
               </View>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -219,7 +221,7 @@ export default function InsightsScreen({ onTab }: Props) {
 
             {/* Tx count */}
             <View style={styles.countCard}>
-              <Text style={styles.countLabel}>Total Transactions</Text>
+              <Text style={styles.countLabel}>{t('insights.transactions', { count: txs.length })}</Text>
               <Text style={styles.countValue}>{txs.length}</Text>
             </View>
           </>
