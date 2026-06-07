@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zcash Wallet — Privacy Policy</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0f0d0b; color: #e8e3dc;
+      max-width: 760px; margin: 0 auto; padding: 40px 24px 80px;
+      line-height: 1.7;
+    }
+    header { display: flex; align-items: center; gap: 16px; margin-bottom: 48px; padding-bottom: 24px; border-bottom: 1px solid #2a2520; }
+    .logo { width: 56px; height: 56px; border-radius: 14px; background: #F4C42A; display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 900; color: #1a1209; }
+    h1 { font-size: 28px; font-weight: 700; color: #fff; }
+    .date { font-size: 13px; color: #6a6560; margin-top: 4px; }
+    h2 { font-size: 18px; font-weight: 600; color: #F4C42A; margin: 32px 0 12px; }
+    p, li { color: #b0aaa4; font-size: 15px; margin-bottom: 12px; }
+    ul { padding-left: 20px; }
+    li { margin-bottom: 8px; }
+    strong { color: #e8e3dc; }
+    .highlight { background: #1a1714; border-left: 3px solid #F4C42A; padding: 16px 20px; border-radius: 0 8px 8px 0; margin: 20px 0; }
+    footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid #2a2520; font-size: 13px; color: #6a6560; }
+    a { color: #F4C42A; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">Z</div>
+    <div>
+      <h1>Privacy Policy</h1>
+      <div class="date">Zcash Wallet · Last updated June 7, 2026</div>
+    </div>
+  </header>
+
+  <div class="highlight">
+    <strong>Short version:</strong> We collect nothing. Your keys stay on your device. We have no servers that store your personal data.
+  </div>
+
+  <h2>No Data Collection</h2>
+  <p>Zcash Wallet collects <strong>zero personal data</strong>. We do not require registration, login, email address, or any account creation. There are no analytics SDKs, no crash reporters, no advertising frameworks, and no tracking of any kind in this application.</p>
+
+  <h2>Your Keys Stay on Your Device</h2>
+  <p>Your 24-word recovery phrase and all private keys are stored exclusively in your device's secure enclave — iOS Keychain on iPhone. They are:</p>
+  <ul>
+    <li>Never transmitted to our servers or any third party</li>
+    <li>Never stored in iCloud or external backups (stored with WHEN_UNLOCKED_THIS_DEVICE_ONLY flag)</li>
+    <li>Protected by device encryption and optionally by Face ID / Touch ID biometric authentication</li>
+    <li>Accessible only when the device screen is unlocked by the owner</li>
+  </ul>
+
+  <h2>Network Requests</h2>
+  <p>The app communicates with the following services:</p>
+  <ul>
+    <li><strong>api.zecwallet.app</strong> — Our stateless relay backend. Proxies Zcash blockchain queries. No user-identifying information is stored. Your Unified Full Viewing Key (UFVK) is used to compute balances; it cannot spend funds.</li>
+    <li><strong>na.zec.rocks:443</strong> — Public Zcash lightwalletd node operated by the Zcash community. Used for compact block synchronization.</li>
+    <li><strong>api.kraken.com</strong> — Public Kraken exchange API. Used only to fetch the ZEC/USD market price. No wallet data is ever sent to Kraken.</li>
+  </ul>
+
+  <h2>On-Device Storage</h2>
+  <p>The following data is stored locally on your device in iOS Keychain (protected by device encryption):</p>
+  <ul>
+    <li>Your 24-word BIP39 recovery phrase</li>
+    <li>Your Zcash unified address</li>
+    <li>Your Unified Full Viewing Key (UFVK)</li>
+    <li>Your wallet birthday block height</li>
+    <li>Your biometric lock preference (on/off)</li>
+  </ul>
+  <p>No other data is stored by this application.</p>
+
+  <h2>Open Source</h2>
+  <p>This application's source code is open source. You can independently verify all privacy claims by reading the code. We encourage security researchers to audit our implementation.</p>
+
+  <h2>Children</h2>
+  <p>This application is intended for users 17 years of age and older (Apple App Store rating 17+). We do not knowingly collect any information from minors.</p>
+
+  <h2>Changes to This Policy</h2>
+  <p>If we make material changes to this privacy policy, we will update the "Last updated" date above. Continued use of the application after such changes constitutes acceptance of the updated policy.</p>
+
+  <h2>Contact</h2>
+  <p>For privacy-related questions or concerns: <a href="mailto:privacy@zecwallet.app">privacy@zecwallet.app</a></p>
+
+  <footer>
+    <p>Zcash Wallet · <a href="mailto:support@zecwallet.app">support@zecwallet.app</a></p>
+  </footer>
+</body>
+</html>
