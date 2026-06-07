@@ -4,6 +4,8 @@ import {
   TouchableOpacity, TextInput, Alert, KeyboardAvoidingView,
   Platform, ActivityIndicator,
 } from 'react-native'
+import { useTranslation } from 'react-i18next'
+import * as Haptics from 'expo-haptics'
 import { Colors, Typography, Spacing, Radius } from '../theme'
 import { Button } from '../components/ui'
 import { isValidZecAddress, estimateFee, sendTransaction } from '../services/zingo'
@@ -14,6 +16,7 @@ interface Props { onBack: () => void }
 type Step = 'input' | 'confirm' | 'done'
 
 export default function SendScreen({ onBack }: Props) {
+  const { t } = useTranslation()
   const [step,       setStep]       = useState<Step>('input')
   const [toAddr,     setToAddr]     = useState('')
   const [amount,     setAmount]     = useState('')
@@ -78,15 +81,15 @@ export default function SendScreen({ onBack }: Props) {
           <View style={styles.doneIconWrap}>
             <Text style={styles.doneCheckmark}>✓</Text>
           </View>
-          <Text style={styles.doneTitle}>Sent!</Text>
+          <Text style={styles.doneTitle}>{t('send.sentTitle')}</Text>
           <View style={styles.txidCard}>
-            <Text style={styles.txidLabel}>TRANSACTION ID</Text>
+            <Text style={styles.txidLabel}>{t('send.txid').toUpperCase()}</Text>
             <Text style={styles.txidText} selectable>
               {txid.length > 32 ? txid.slice(0, 32) + '...' : txid}
             </Text>
           </View>
           <TouchableOpacity style={styles.backToWalletBtn} onPress={onBack}>
-            <Text style={styles.backToWalletLabel}>Back to Wallet</Text>
+            <Text style={styles.backToWalletLabel}>{t('send.backToWallet')}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -112,11 +115,11 @@ export default function SendScreen({ onBack }: Props) {
               hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
             >
               <Text style={styles.headerBack}>
-                {step === 'confirm' ? '← Edit' : '← Cancel'}
+                {step === 'confirm' ? t('send.edit') : `← ${t('send.cancel')}`}
               </Text>
             </TouchableOpacity>
             <Text style={styles.headerTitle}>
-              {step === 'confirm' ? 'Review Transaction' : 'Send ZEC'}
+              {step === 'confirm' ? t('send.review') : t('send.title')}
             </Text>
             <View style={{ width: 60 }} />
           </View>
@@ -126,7 +129,7 @@ export default function SendScreen({ onBack }: Props) {
             <>
               {/* Destination address */}
               <View style={styles.fieldWrap}>
-                <Text style={styles.fieldLabel}>To Address</Text>
+                <Text style={styles.fieldLabel}>{t('send.toAddress')}</Text>
                 <TextInput
                   value={toAddr}
                   onChangeText={setToAddr}
@@ -140,13 +143,13 @@ export default function SendScreen({ onBack }: Props) {
                   ]}
                 />
                 {toAddr.length > 0 && !addressValid && (
-                  <Text style={styles.errorHint}>Invalid ZEC address</Text>
+                  <Text style={styles.errorHint}>{t('send.invalidAddress')}</Text>
                 )}
               </View>
 
               {/* Amount */}
               <View style={styles.fieldWrap}>
-                <Text style={styles.fieldLabel}>Amount (ZEC)</Text>
+                <Text style={styles.fieldLabel}>{t('send.amount')}</Text>
                 <View style={styles.amountRow}>
                   <TextInput
                     value={amount}
@@ -165,7 +168,7 @@ export default function SendScreen({ onBack }: Props) {
               {/* Memo */}
               <View style={styles.fieldWrap}>
                 <Text style={styles.fieldLabel}>
-                  Memo{' '}
+                  {t('send.memo')}{' '}
                   <Text style={styles.fieldLabelSub}>(optional · shielded only)</Text>
                 </Text>
                 <TextInput
@@ -185,11 +188,11 @@ export default function SendScreen({ onBack }: Props) {
               {loadingFee ? (
                 <View style={styles.feeLoadingRow}>
                   <ActivityIndicator color={Colors.zec} size="small" />
-                  <Text style={styles.feeLoadingText}>Estimating fee...</Text>
+                  <Text style={styles.feeLoadingText}>{t('common.loading')}</Text>
                 </View>
               ) : (
                 <Button
-                  label="Review Transaction"
+                  label={t('send.review')}
                   onPress={handleReview}
                   variant="primary"
                   disabled={!canReview}
@@ -204,7 +207,7 @@ export default function SendScreen({ onBack }: Props) {
               <View style={styles.confirmCard}>
                 {/* To */}
                 <View style={styles.confirmRow}>
-                  <Text style={styles.confirmLabel}>TO</Text>
+                  <Text style={styles.confirmLabel}>{t('send.to').toUpperCase()}</Text>
                   <Text style={styles.confirmValue} numberOfLines={2}>
                     {toAddr.length > 20
                       ? toAddr.slice(0, 10) + '...' + toAddr.slice(-10)
@@ -216,19 +219,19 @@ export default function SendScreen({ onBack }: Props) {
 
                 {/* Amount */}
                 <View style={styles.confirmRow}>
-                  <Text style={styles.confirmLabel}>AMOUNT</Text>
+                  <Text style={styles.confirmLabel}>{t('send.amountLabel').toUpperCase()}</Text>
                   <Text style={styles.confirmValue}>{parseFloat(amount).toFixed(8)} ZEC</Text>
                 </View>
 
                 {/* Fee */}
                 <View style={styles.confirmRow}>
-                  <Text style={styles.confirmLabel}>NETWORK FEE</Text>
+                  <Text style={styles.confirmLabel}>{t('send.fee').toUpperCase()}</Text>
                   <Text style={styles.confirmValue}>{feeZec.toFixed(8)} ZEC</Text>
                 </View>
 
                 {/* Total */}
                 <View style={[styles.confirmRow, styles.totalRow]}>
-                  <Text style={styles.confirmLabel}>TOTAL</Text>
+                  <Text style={styles.confirmLabel}>{t('send.total').toUpperCase()}</Text>
                   <Text style={styles.totalValue}>{totalZec.toFixed(8)} ZEC</Text>
                 </View>
 
@@ -247,9 +250,9 @@ export default function SendScreen({ onBack }: Props) {
 
                 {/* Pool */}
                 <View style={styles.confirmRow}>
-                  <Text style={styles.confirmLabel}>POOL</Text>
+                  <Text style={styles.confirmLabel}>{t('send.pool').toUpperCase()}</Text>
                   <Text style={[styles.confirmValue, styles.poolValue]}>
-                    Orchard (Shielded)
+                    {t('send.shieldedPool')}
                   </Text>
                 </View>
               </View>
@@ -257,12 +260,15 @@ export default function SendScreen({ onBack }: Props) {
               {sending ? (
                 <View style={styles.feeLoadingRow}>
                   <ActivityIndicator color={Colors.zec} size="small" />
-                  <Text style={styles.feeLoadingText}>Broadcasting transaction...</Text>
+                  <Text style={styles.feeLoadingText}>{t('send.sending')}</Text>
                 </View>
               ) : (
                 <Button
-                  label="Confirm & Send"
-                  onPress={handleSend}
+                  label={t('send.confirmSend')}
+                  onPress={async () => {
+                    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy)
+                    handleSend()
+                  }}
                   variant="primary"
                   disabled={sending}
                 />

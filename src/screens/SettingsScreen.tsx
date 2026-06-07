@@ -3,7 +3,10 @@ import {
   View, Text, StyleSheet, SafeAreaView, ScrollView,
   TouchableOpacity, Alert, Switch, Modal, ActivityIndicator,
 } from 'react-native'
+import { useTranslation } from 'react-i18next'
+import * as Haptics from 'expo-haptics'
 import { Colors, Typography, Spacing, Radius } from '../theme'
+import i18n from '../i18n'
 import {
   isBiometricAvailable,
   isBiometricEnabled,
@@ -17,6 +20,7 @@ interface Props {
 }
 
 export default function SettingsScreen({ onWalletDeleted }: Props) {
+  const { t } = useTranslation()
   const [address,            setAddress]            = useState<string | null>(null)
   const [biometricAvailable, setBiometricAvailable] = useState(false)
   const [biometricEnabled,   setBiometricEnabledState] = useState(false)
@@ -41,7 +45,7 @@ export default function SettingsScreen({ onWalletDeleted }: Props) {
   async function handleBiometricToggle(value: boolean) {
     if (value) {
       // Enabling: require authentication first
-      const ok = await authenticate('Authenticate to enable Face ID lock')
+      const ok = await authenticate(t('settings.authPromptEnable'))
       if (!ok) return
     }
     await setBiometricEnabled(value)
@@ -51,14 +55,14 @@ export default function SettingsScreen({ onWalletDeleted }: Props) {
   async function handleViewSeed() {
     setLoadingSeed(true)
     try {
-      const ok = await authenticate('Authenticate to view your recovery phrase')
+      const ok = await authenticate(t('settings.authPromptPhrase'))
       if (!ok) {
         setLoadingSeed(false)
         return
       }
       const seed = await getSeed()
       if (!seed) {
-        Alert.alert('Error', 'Recovery phrase not found.')
+        Alert.alert(t('common.error'), 'Recovery phrase not found.')
         setLoadingSeed(false)
         return
       }
@@ -71,21 +75,21 @@ export default function SettingsScreen({ onWalletDeleted }: Props) {
 
   function handleDeleteWallet() {
     Alert.alert(
-      'Delete Wallet',
-      'This will remove your wallet. Make sure you backed up your phrase.',
+      t('settings.deleteConfirm1Title'),
+      t('settings.deleteConfirm1Message'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('settings.cancel'), style: 'cancel' },
         {
           text: 'Continue',
           style: 'destructive',
           onPress: () => {
             Alert.alert(
-              'Are you sure?',
-              'This cannot be undone.',
+              t('settings.deleteConfirm2Title'),
+              t('settings.deleteConfirm2Message'),
               [
-                { text: 'Cancel', style: 'cancel' },
+                { text: t('settings.cancel'), style: 'cancel' },
                 {
-                  text: 'Delete',
+                  text: t('settings.deleteForever'),
                   style: 'destructive',
                   onPress: async () => {
                     await clearWallet()
@@ -103,18 +107,18 @@ export default function SettingsScreen({ onWalletDeleted }: Props) {
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.pageTitle}>Settings</Text>
+        <Text style={styles.pageTitle}>{t('settings.title')}</Text>
 
         {/* ── SECURITY ── */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>SECURITY</Text>
+          <Text style={styles.sectionTitle}>{t('settings.securitySection')}</Text>
           <View style={styles.card}>
             <View style={styles.switchRow}>
               <View style={styles.switchLabel}>
-                <Text style={styles.rowLabel}>Face ID / Biometric Lock</Text>
+                <Text style={styles.rowLabel}>{t('settings.faceId')}</Text>
                 <Text style={styles.rowHint}>
                   {biometricAvailable
-                    ? 'Require authentication to open'
+                    ? t('settings.faceIdSub')
                     : 'Not available on this device'}
                 </Text>
               </View>
@@ -131,7 +135,7 @@ export default function SettingsScreen({ onWalletDeleted }: Props) {
 
         {/* ── RECOVERY ── */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>RECOVERY</Text>
+          <Text style={styles.sectionTitle}>{t('settings.recoverySection')}</Text>
           <View style={styles.card}>
             <TouchableOpacity
               style={styles.actionRow}
@@ -141,7 +145,7 @@ export default function SettingsScreen({ onWalletDeleted }: Props) {
               {loadingSeed ? (
                 <ActivityIndicator size="small" color={Colors.zec} />
               ) : (
-                <Text style={styles.actionLabel}>🔑  View Recovery Phrase</Text>
+                <Text style={styles.actionLabel}>🔑  {t('settings.viewPhrase')}</Text>
               )}
               <Text style={styles.chevron}>›</Text>
             </TouchableOpacity>
@@ -150,10 +154,10 @@ export default function SettingsScreen({ onWalletDeleted }: Props) {
 
         {/* ── WALLET ── */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>WALLET</Text>
+          <Text style={styles.sectionTitle}>{t('settings.walletSection')}</Text>
           <View style={styles.card}>
             <View style={styles.addrBlock}>
-              <Text style={styles.addrLabel}>Unified Address</Text>
+              <Text style={styles.addrLabel}>{t('settings.address')}</Text>
               {address ? (
                 <Text style={styles.addrValue} selectable>
                   {address}
@@ -165,11 +169,24 @@ export default function SettingsScreen({ onWalletDeleted }: Props) {
           </View>
         </View>
 
+        {/* ── LANGUAGE ── */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{t('settings.languageSection')}</Text>
+          <View style={styles.card}>
+            <View style={styles.switchRow}>
+              <View style={styles.switchLabel}>
+                <Text style={styles.rowLabel}>{t('settings.language')}</Text>
+              </View>
+              <Text style={styles.rowHint}>{i18n.language.toUpperCase()}</Text>
+            </View>
+          </View>
+        </View>
+
         {/* ── DANGER ZONE ── */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: Colors.error }]}>DANGER ZONE</Text>
+          <Text style={[styles.sectionTitle, { color: Colors.error }]}>{t('settings.dangerSection')}</Text>
           <TouchableOpacity style={styles.deleteBtn} onPress={handleDeleteWallet}>
-            <Text style={styles.deleteBtnLabel}>🗑️  Delete Wallet from Device</Text>
+            <Text style={styles.deleteBtnLabel}>🗑️  {t('settings.deleteWallet')}</Text>
           </TouchableOpacity>
           <Text style={styles.deleteHint}>
             Your ZEC stays on the blockchain. You can restore anytime with your recovery phrase.
@@ -186,9 +203,9 @@ export default function SettingsScreen({ onWalletDeleted }: Props) {
       >
         <View style={modal.overlay}>
           <View style={modal.sheet}>
-            <Text style={modal.title}>Recovery Phrase</Text>
+            <Text style={modal.title}>{t('settings.phraseModalTitle')}</Text>
             <Text style={modal.warning}>
-              ⚠️ Never share this phrase with anyone
+              ⚠️ {t('settings.phraseWarning')}
             </Text>
             <ScrollView contentContainerStyle={modal.grid}>
               {seedWords.map((word, i) => (
@@ -205,7 +222,7 @@ export default function SettingsScreen({ onWalletDeleted }: Props) {
                 setSeedWords([])
               }}
             >
-              <Text style={modal.closeBtnText}>Close</Text>
+              <Text style={modal.closeBtnText}>{t('settings.close')}</Text>
             </TouchableOpacity>
           </View>
         </View>
