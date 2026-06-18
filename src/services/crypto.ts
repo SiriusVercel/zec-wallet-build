@@ -1,8 +1,14 @@
-import { API_BASE } from '../config'
-
 // ── RSA-OAEP (mnemonic encryption for server transit) ────────────────────────
 
-let _cachedPubKeyPem: string | null = null
+const PINNED_SERVER_PUBKEY_PEM = `-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAnMlR6uC0VAF57Zok/NLU
+N8JQoCF7rb3wriGh8Olyr2HFOE9D43yq06yY3QOlJrz1og1QiwkdXNzFs1kBEixc
+ZpR8/ml6G3mvX3e1RPeGt5dpEcR+UyQeNWpWWoy6z67pSLrDMpB7DJphhl+fvGto
+Z6BFbfd2snI+jqPkEnUemhv18yJ5D6fN61/Q8fndWhv5pKk7NLJkKL8YDqZ7aIjB
+SLTBH9zFUzOcnZknGLcRGSo9hNtIMRL1iIJScnlnuKhNJFEg0Ly6CxkfFjpGDlHX
+J7UMCzqTHvv5g9V54zv8V69+1XYH8jGLdZN1dO42zekDph6xg51UzgBZhwS8aQ9n
+mwIDAQAB
+-----END PUBLIC KEY-----`
 
 function pemToArrayBuffer(pem: string): ArrayBuffer {
   const b64 = pem.replace(/-----[^-]+-----/g, '').replace(/\s+/g, '')
@@ -13,16 +19,8 @@ function pemToArrayBuffer(pem: string): ArrayBuffer {
   return buf
 }
 
-export async function fetchAndCacheServerPubKey(): Promise<void> {
-  const res = await fetch(`${API_BASE}/api/zec/pubkey`)
-  if (!res.ok) throw new Error('Failed to fetch server public key')
-  const { pubkey } = await res.json()
-  _cachedPubKeyPem = pubkey
-}
-
 export async function encryptWithServerKey(plaintext: string): Promise<string> {
-  if (!_cachedPubKeyPem) await fetchAndCacheServerPubKey()
-  const keyData = pemToArrayBuffer(_cachedPubKeyPem!)
+  const keyData = pemToArrayBuffer(PINNED_SERVER_PUBKEY_PEM)
   const publicKey = await crypto.subtle.importKey(
     'spki',
     keyData,
