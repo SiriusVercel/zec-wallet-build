@@ -8,6 +8,8 @@ import { useTranslation } from 'react-i18next'
 import { Colors, Typography, Spacing, Radius } from '../theme'
 import { deriveWallet } from '../services/zingo'
 import { saveSeed, saveWalletInfo } from '../services/zcash'
+import { backupSeed } from '../services/backup'
+import { ArrowLeftIcon } from '../components/Icons'
 
 interface Props {
   onDone: () => void
@@ -57,6 +59,7 @@ export default function ImportWalletScreen({ onDone, onBack }: Props) {
         ufvk:     derived.ufvk,
         birthday: derived.birthday,
       })
+      backupSeed(mnemonic)
       onDone()
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Unknown error'
@@ -79,7 +82,10 @@ export default function ImportWalletScreen({ onDone, onBack }: Props) {
           {/* Header */}
           <View style={styles.header}>
             <TouchableOpacity onPress={onBack} style={styles.backBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-              <Text style={styles.backLabel}>← {t('importWallet.back')}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <ArrowLeftIcon size={14} color={Colors.zec} />
+                <Text style={styles.backLabel}>{t('importWallet.back')}</Text>
+              </View>
             </TouchableOpacity>
           </View>
 
@@ -165,7 +171,7 @@ export default function ImportWalletScreen({ onDone, onBack }: Props) {
           )}
 
           <Text style={styles.disclaimer}>
-            Your phrase never leaves this device. ZEC Wallet is non-custodial.
+            Your wallet is protected by device-level encryption and optional biometric authentication.
           </Text>
         </ScrollView>
       </KeyboardAvoidingView>
