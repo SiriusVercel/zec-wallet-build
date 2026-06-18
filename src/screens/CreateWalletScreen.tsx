@@ -8,6 +8,8 @@ import { useTranslation } from 'react-i18next'
 import { Colors } from '../theme'
 import { generateWallet } from '../services/zingo'
 import { saveSeed, saveWalletInfo } from '../services/zcash'
+import { backupSeed } from '../services/backup'
+import { CheckCircleIcon } from '../components/Icons'
 
 type Step = 'generating' | 'backup' | 'quiz' | 'done'
 
@@ -18,7 +20,12 @@ interface QuizQuestion {
 }
 
 function pickQuizQuestions(words: string[]): QuizQuestion[] {
-  const positions = [4, 11, 19]
+  const indices = Array.from({ length: words.length }, (_, i) => i)
+  for (let i = indices.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [indices[i], indices[j]] = [indices[j], indices[i]]
+  }
+  const positions = indices.slice(0, 3).sort((a, b) => a - b)
   return positions.map(i => {
     const correct = words[i]
     const distractors = words
@@ -79,8 +86,10 @@ export function CreateWalletScreen({ onDone, onBack }: Props) {
       return
     }
     try {
-      await saveSeed(words.join(' '))
+      const seedPhrase = words.join(' ')
+      await saveSeed(seedPhrase)
       await saveWalletInfo(walletData!)
+      backupSeed(seedPhrase)
       setStep('done')
     } catch (e: any) {
       Alert.alert(t('common.error'), e.message || 'Failed to save wallet')
@@ -173,7 +182,7 @@ export function CreateWalletScreen({ onDone, onBack }: Props) {
 
   return (
     <View style={styles.center}>
-      <Text style={styles.doneIcon}>✓</Text>
+      <CheckCircleIcon size={64} color={Colors.success} />
       <Text style={styles.title}>{t('createWallet.successTitle')}</Text>
       <Text style={styles.subtitle}>{t('createWallet.successSubtitle')}</Text>
       <TouchableOpacity style={styles.btn} onPress={onDone}>
@@ -205,6 +214,6 @@ const styles = StyleSheet.create({
   optionSelected: { borderColor: Colors.zec, backgroundColor: Colors.bgElevated },
   optionText: { color: Colors.textSecondary, fontSize: 14 },
   optionTextSelected: { color: Colors.zec, fontWeight: '600' },
-  doneIcon: { fontSize: 56, marginBottom: 16 },
+
   errorText: { color: Colors.error, fontSize: 14, textAlign: 'center', marginBottom: 16 },
 })
