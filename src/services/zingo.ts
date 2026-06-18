@@ -46,6 +46,8 @@ export interface Transaction {
   block: number
   pool: string
   direction: 'received' | 'sent'
+  timestamp?: number
+  confirmed?: boolean
 }
 
 export interface SyncStatus {
@@ -76,12 +78,19 @@ export function estimateFee(toAddress: string, amountZat: number): Promise<{ fee
 }
 
 export function sendTransaction(
-  mnemonic: string,
+  encryptedMnemonic: string,
   toAddress: string,
   amountZat: number,
   memo?: string,
+  birthday?: number,
 ): Promise<{ txid: string }> {
-  return post<{ txid: string }>('/api/zec/send', { mnemonic, toAddress, amountZat, memo })
+  return post<{ txid: string }>('/api/zec/send', {
+    encryptedMnemonic,
+    to_address: toAddress,
+    amount_zat: amountZat,
+    memo,
+    birthday,
+  })
 }
 
 export function getSyncStatus(): Promise<SyncStatus> {

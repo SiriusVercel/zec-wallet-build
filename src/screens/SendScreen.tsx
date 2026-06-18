@@ -8,14 +8,20 @@ import { useTranslation } from 'react-i18next'
 import * as Haptics from 'expo-haptics'
 import { Colors, Typography, Spacing, Radius } from '../theme'
 import { Button } from '../components/ui'
+import { ArrowLeftIcon, CheckIcon } from '../components/Icons'
 import { isValidZecAddress, estimateFee, sendTransaction } from '../services/zingo'
+import type { Balance } from '../services/zingo'
 import { getSeed } from '../services/zcash'
+import { encryptWithServerKey } from '../services/crypto'
 
-interface Props { onBack: () => void }
+interface Props {
+  onBack:            () => void
+  availableBalance?: Balance
+}
 
 type Step = 'input' | 'confirm' | 'done'
 
-export default function SendScreen({ onBack }: Props) {
+export default function SendScreen({ onBack, availableBalance }: Props) {
   const { t } = useTranslation()
   const [step,       setStep]       = useState<Step>('input')
   const [toAddr,     setToAddr]     = useState('')
@@ -25,6 +31,7 @@ export default function SendScreen({ onBack }: Props) {
   const [txid,       setTxid]       = useState('')
   const [loadingFee, setLoadingFee] = useState(false)
   const [sending,    setSending]    = useState(false)
+  const [error,      setError]      = useState('')
 
   // double-send guard — set to true on first tap, never reset
   const sendingRef = useRef(false)
@@ -59,9 +66,19 @@ export default function SendScreen({ onBack }: Props) {
     sendingRef.current = true
     setSending(true)
     try {
-      const mnemonic = await getSeed()
-      if (!mnemonic) throw new Error('Seed not found — wallet may be corrupted')
-      const result = await sendTransaction(mnemonic, toAddr, amountZat, memo || undefined)
+      const FEE_ZAT = 100_000
+      if (availableBalance !== undefined) {
+        if (amountZat + FEE_ZAT > availableBalance.total) {
+          setError('Insufficient balance (amount + fee exceeds available ZEC)')
+          sendingRef.current = false
+          setSending(false)
+          return
+        }
+      }
+      const seed = await getSeed()
+      if (!seed) throw new Error('Seed not found — wallet may be corrupted')
+      const encryptedMnemonic = await encryptWithServerKey(seed)
+      const result = await sendTransaction(encryptedMnemonic, toAddr, amountZat, memo || undefined)
       setTxid(result.txid)
       setStep('done')
     } catch (e: any) {
@@ -79,7 +96,7 @@ export default function SendScreen({ onBack }: Props) {
       <SafeAreaView style={styles.safe}>
         <View style={styles.center}>
           <View style={styles.doneIconWrap}>
-            <Text style={styles.doneCheckmark}>✓</Text>
+            <CheckIcon size={40} color={Colors.success} />
           </View>
           <Text style={styles.doneTitle}>{t('send.sentTitle')}</Text>
           <View style={styles.txidCard}>
@@ -113,9 +130,11 @@ export default function SendScreen({ onBack }: Props) {
             <TouchableOpacity
               onPress={step === 'confirm' ? () => setStep('input') : onBack}
               hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              style={styles.headerBackBtn}
             >
+              {step !== 'confirm' && <ArrowLeftIcon size={16} color={Colors.zec} />}
               <Text style={styles.headerBack}>
-                {step === 'confirm' ? t('send.edit') : `← ${t('send.cancel')}`}
+                {step === 'confirm' ? t('send.edit') : t('send.cancel')}
               </Text>
             </TouchableOpacity>
             <Text style={styles.headerTitle}>
@@ -163,6 +182,11 @@ export default function SendScreen({ onBack }: Props) {
                     <Text style={styles.currencyTagText}>ZEC</Text>
                   </View>
                 </View>
+                {availableBalance !== undefined && (
+                  <Text style={styles.balanceHint}>
+                    Available: {(availableBalance.total / 1e8).toFixed(8)} ZEC
+                  </Text>
+                )}
               </View>
 
               {/* Memo */}
@@ -184,6 +208,10 @@ export default function SendScreen({ onBack }: Props) {
                   {memo.length}/512 · only delivered to shielded addresses
                 </Text>
               </View>
+
+              {error ? (
+                <Text style={styles.errorHint}>{error}</Text>
+              ) : null}
 
               {loadingFee ? (
                 <View style={styles.feeLoadingRow}>
@@ -287,8 +315,9 @@ const styles = StyleSheet.create({
   center:    { flex: 1, alignItems: 'center', justifyContent: 'center', gap: Spacing.md, padding: Spacing.lg },
 
   // Header
-  header:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: Spacing.sm },
-  headerBack:  { ...Typography.body, color: Colors.zec },
+  header:        { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: Spacing.sm },
+  headerBackBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  headerBack:    { ...Typography.body, color: Colors.zec },
   headerTitle: { ...Typography.heading3, color: Colors.textPrimary },
 
   // Fields
@@ -314,7 +343,8 @@ const styles = StyleSheet.create({
   currencyTag:     { backgroundColor: Colors.zecGlow, borderRadius: Radius.sm, padding: Spacing.sm, borderWidth: 1, borderColor: Colors.zec },
   currencyTagText: { ...Typography.bodyBold, color: Colors.zec },
 
-  memoInput: { height: 80, textAlignVertical: 'top' as const },
+  memoInput:   { height: 80, textAlignVertical: 'top' as const },
+  balanceHint: { fontSize: 12, color: Colors.textMuted, marginTop: 4, textAlign: 'right' },
 
   // Fee loading
   feeLoadingRow:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm, height: 56 },
