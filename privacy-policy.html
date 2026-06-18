@@ -31,30 +31,32 @@
     <div class="logo">Z</div>
     <div>
       <h1>Privacy Policy</h1>
-      <div class="date">Zcash Wallet · Last updated June 7, 2026</div>
+      <div class="date">Zcash Wallet · Last updated June 18, 2026</div>
     </div>
   </header>
 
   <div class="highlight">
-    <strong>Short version:</strong> We collect nothing. Your keys stay on your device. We have no servers that store your personal data.
+    <strong>Short version:</strong> We collect no personal data. Transactions are signed server-side using your encrypted recovery phrase (never stored). Balances use a read-only key. An encrypted backup of your recovery phrase is stored on our server — only you hold the decryption key.
   </div>
 
   <h2>No Data Collection</h2>
   <p>Zcash Wallet collects <strong>zero personal data</strong>. We do not require registration, login, email address, or any account creation. There are no analytics SDKs, no crash reporters, no advertising frameworks, and no tracking of any kind in this application.</p>
 
-  <h2>Your Keys Stay on Your Device</h2>
-  <p>Your 24-word recovery phrase and all private keys are stored exclusively in your device's secure enclave — iOS Keychain on iPhone. They are:</p>
+  <h2>Your Recovery Phrase</h2>
+  <p>Your 24-word recovery phrase is stored in your device's iOS Keychain with <strong>WHEN_UNLOCKED_THIS_DEVICE_ONLY</strong> protection. When you send a transaction, the phrase is encrypted with RSA-OAEP (2048-bit) and transmitted to our signing server over HTTPS. The server decrypts it in-memory to sign the transaction and immediately discards it — it is never logged or persisted.</p>
   <ul>
-    <li>Never transmitted to our servers or any third party</li>
-    <li>Never stored in iCloud or external backups (stored with WHEN_UNLOCKED_THIS_DEVICE_ONLY flag)</li>
-    <li>Protected by device encryption and optionally by Face ID / Touch ID biometric authentication</li>
-    <li>Accessible only when the device screen is unlocked by the owner</li>
+    <li>Never stored in plaintext on our servers</li>
+    <li>Never stored in iCloud or accessible to third parties</li>
+    <li>Protected by device encryption and optionally Face ID / Touch ID</li>
+    <li>Accessible only when the device screen is unlocked</li>
   </ul>
+  <h2>Encrypted Backup</h2>
+  <p>For wallet recovery purposes, an encrypted backup of your recovery phrase is stored on our servers. The backup is encrypted client-side with AES-256-GCM using a key generated on your device. This key is stored only in your iOS Keychain and is never transmitted to us. Our servers cannot read your recovery phrase without your device key. You can export your backup key at any time from Settings → Export Recovery Key.</p>
 
   <h2>Network Requests</h2>
   <p>The app communicates with the following services:</p>
   <ul>
-    <li><strong>api.zecwallet.app</strong> — Our stateless relay backend. Proxies Zcash blockchain queries. No user-identifying information is stored. Your Unified Full Viewing Key (UFVK) is used to compute balances; it cannot spend funds.</li>
+    <li><strong>api.zecwallet.app</strong> — Our backend server. Used for: (1) transaction signing — your recovery phrase is transmitted encrypted and immediately discarded after use; (2) balance and history queries using your Unified Full Viewing Key (UFVK), which is read-only and cannot spend funds; (3) storing an AES-256-GCM encrypted backup of your recovery phrase (our server cannot decrypt it — only your device key can).</li>
     <li><strong>na.zec.rocks:443</strong> — Public Zcash lightwalletd node operated by the Zcash community. Used for compact block synchronization.</li>
     <li><strong>api.kraken.com</strong> — Public Kraken exchange API. Used only to fetch the ZEC/USD market price. No wallet data is ever sent to Kraken.</li>
   </ul>
