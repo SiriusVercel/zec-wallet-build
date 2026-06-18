@@ -5,6 +5,7 @@ import {
 } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import * as Haptics from 'expo-haptics'
+import * as Clipboard from 'expo-clipboard'
 import { Colors, Typography, Spacing, Radius } from '../theme'
 import i18n from '../i18n'
 import {
@@ -14,6 +15,8 @@ import {
   authenticate,
 } from '../services/biometric'
 import { getSeed, getWalletInfo, clearWallet } from '../services/zcash'
+import { exportBackupKey } from '../services/backup'
+import { KeyIcon, TrashIcon, ChevronRightIcon, WarningIcon } from '../components/Icons'
 
 interface Props {
   onWalletDeleted: () => void
@@ -104,6 +107,21 @@ export default function SettingsScreen({ onWalletDeleted }: Props) {
     )
   }
 
+  async function handleExportBackupKey() {
+    const ok = await authenticate(t('settings.authPromptPhrase'))
+    if (!ok) return
+    const key = await exportBackupKey()
+    if (!key) {
+      Alert.alert(t('common.error'), 'No recovery key found for this wallet.')
+      return
+    }
+    await Clipboard.setStringAsync(key)
+    Alert.alert(
+      'Recovery Key Copied',
+      'Your recovery key has been copied to clipboard. Store it securely — it is needed to recover your wallet from server backup.',
+    )
+  }
+
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.container}>
@@ -145,9 +163,20 @@ export default function SettingsScreen({ onWalletDeleted }: Props) {
               {loadingSeed ? (
                 <ActivityIndicator size="small" color={Colors.zec} />
               ) : (
-                <Text style={styles.actionLabel}>🔑  {t('settings.viewPhrase')}</Text>
+                <View style={styles.actionLabelRow}>
+                  <KeyIcon size={18} color={Colors.zec} />
+                  <Text style={styles.actionLabel}>{t('settings.viewPhrase')}</Text>
+                </View>
               )}
-              <Text style={styles.chevron}>›</Text>
+              <ChevronRightIcon size={20} color={Colors.textMuted} />
+            </TouchableOpacity>
+            <View style={styles.divider} />
+            <TouchableOpacity style={styles.actionRow} onPress={handleExportBackupKey}>
+              <View style={styles.actionLabelRow}>
+                <KeyIcon size={18} color={Colors.purple} />
+                <Text style={[styles.actionLabel, { color: Colors.purple }]}>Export Recovery Key</Text>
+              </View>
+              <ChevronRightIcon size={20} color={Colors.textMuted} />
             </TouchableOpacity>
           </View>
         </View>
@@ -186,7 +215,10 @@ export default function SettingsScreen({ onWalletDeleted }: Props) {
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: Colors.error }]}>{t('settings.dangerSection')}</Text>
           <TouchableOpacity style={styles.deleteBtn} onPress={handleDeleteWallet}>
-            <Text style={styles.deleteBtnLabel}>🗑️  {t('settings.deleteWallet')}</Text>
+            <View style={styles.deleteBtnRow}>
+              <TrashIcon size={18} color={Colors.error} />
+              <Text style={styles.deleteBtnLabel}>{t('settings.deleteWallet')}</Text>
+            </View>
           </TouchableOpacity>
           <Text style={styles.deleteHint}>
             Your ZEC stays on the blockchain. You can restore anytime with your recovery phrase.
@@ -204,9 +236,10 @@ export default function SettingsScreen({ onWalletDeleted }: Props) {
         <View style={modal.overlay}>
           <View style={modal.sheet}>
             <Text style={modal.title}>{t('settings.phraseModalTitle')}</Text>
-            <Text style={modal.warning}>
-              ⚠️ {t('settings.phraseWarning')}
-            </Text>
+            <View style={modal.warningRow}>
+              <WarningIcon size={16} color={Colors.warning} />
+              <Text style={modal.warning}>{t('settings.phraseWarning')}</Text>
+            </View>
             <ScrollView contentContainerStyle={modal.grid}>
               {seedWords.map((word, i) => (
                 <View key={i} style={modal.wordCell}>
@@ -243,21 +276,24 @@ const styles = StyleSheet.create({
   rowLabel:      { ...Typography.bodyBold, color: Colors.textPrimary },
   rowHint:       { ...Typography.caption, color: Colors.textMuted, marginTop: 2 },
   actionRow:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: Spacing.md },
+  actionLabelRow:{ flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   actionLabel:   { ...Typography.bodyBold, color: Colors.zec },
-  chevron:       { ...Typography.heading3, color: Colors.textMuted },
+  deleteBtnRow:  { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   addrBlock:     { paddingVertical: Spacing.md, gap: Spacing.xs },
   addrLabel:     { ...Typography.caption, color: Colors.textMuted },
   addrValue:     { ...Typography.mono, color: Colors.textPrimary, fontSize: 11, lineHeight: 17 },
   deleteBtn:     { borderWidth: 1.5, borderColor: Colors.error, borderRadius: Radius.lg, padding: Spacing.md, alignItems: 'center' },
   deleteBtnLabel:{ ...Typography.bodyBold, color: Colors.error },
   deleteHint:    { ...Typography.caption, color: Colors.textMuted, textAlign: 'center', lineHeight: 18 },
+  divider:       { height: 1, backgroundColor: Colors.border },
 })
 
 const modal = StyleSheet.create({
   overlay:     { flex: 1, backgroundColor: Colors.overlay, justifyContent: 'flex-end' },
   sheet:       { backgroundColor: Colors.bgCard, borderTopLeftRadius: Radius.xl, borderTopRightRadius: Radius.xl, padding: Spacing.lg, paddingBottom: Spacing.xxl, maxHeight: '85%' },
   title:       { ...Typography.heading3, color: Colors.textPrimary, textAlign: 'center', marginBottom: Spacing.sm },
-  warning:     { ...Typography.caption, color: Colors.warning, textAlign: 'center', marginBottom: Spacing.md, lineHeight: 18 },
+  warningRow:  { flexDirection: 'row', alignItems: 'flex-start', gap: 6, justifyContent: 'center', marginBottom: Spacing.md },
+  warning:     { ...Typography.caption, color: Colors.warning, flex: 1, lineHeight: 18 },
   grid:        { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingBottom: Spacing.lg },
   wordCell:    { width: '30%', backgroundColor: Colors.bgElevated, borderRadius: 8, padding: 8, flexDirection: 'row', alignItems: 'center', gap: 6 },
   wordNum:     { fontSize: 10, color: Colors.zec, width: 18 },
