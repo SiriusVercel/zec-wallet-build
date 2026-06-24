@@ -6,16 +6,10 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
-    "privacy": "public",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#1A1209"
-    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.zecwallet.app",
-      "buildNumber": "15",
+      "buildNumber": "19",
       "privacyManifests": {
         "NSPrivacyAccessedAPITypes": []
       },
