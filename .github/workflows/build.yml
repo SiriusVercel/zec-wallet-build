@@ -1,0 +1,35 @@
+name: EAS Build iOS
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup EAS
+        run: npm install -g eas-cli
+
+      - name: Authenticate with EAS
+        run: eas secret:create EXPO_TOKEN --scope project --value "${{ secrets.EXPO_TOKEN }}" --force || true
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build iOS app
+        run: |
+          eas build --platform ios --auto-submit \
+            --non-interactive \
+            --token "${{ secrets.EXPO_TOKEN }}"
+
+      - name: Print build result
+        run: echo "✅ Build submitted to App Store!"
