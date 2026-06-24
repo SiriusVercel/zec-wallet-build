@@ -6,30 +6,37 @@ on:
       - main
   workflow_dispatch:
 
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          node-version: 20
-
-      - name: Setup EAS
-        run: npm install -g eas-cli
-
-      - name: Authenticate with EAS
-        run: eas secret:create EXPO_TOKEN --scope project --value "${{ secrets.EXPO_TOKEN }}" --force || true
+          node-version: '20'
+          cache: 'npm'
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
-      - name: Build iOS app
+      - name: Setup EAS CLI
+        run: npm install --global eas-cli
+
+      - name: Build and submit iOS app
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
-          eas build --platform ios --auto-submit \
-            --non-interactive \
-            --token "${{ secrets.EXPO_TOKEN }}"
+          eas build \
+            --platform ios \
+            --auto-submit \
+            --non-interactive
 
-      - name: Print build result
-        run: echo "✅ Build submitted to App Store!"
+      - name: Build success
+        run: echo "✅ iOS build submitted to App Store successfully!"
