@@ -15,14 +15,15 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.zecwallet.app",
-      "buildNumber": "9",
+      "buildNumber": "10",
       "privacyManifests": {
         "NSPrivacyAccessedAPITypes": []
       },
       "infoPlist": {
         "NSFaceIDUsageDescription": "Use Face ID to unlock your Zcash Wallet and protect your seed phrase",
         "NSCameraUsageDescription": "Scan QR codes to quickly enter Zcash addresses",
-        "ITSAppUsesNonExemptEncryption": true
+        "ITSAppUsesNonExemptEncryption": true,
+        "ITSEncryptionExportComplianceCode": "false"
       }
     },
     "android": {
