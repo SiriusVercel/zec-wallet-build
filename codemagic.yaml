@@ -1,0 +1,39 @@
+workflows:
+  ios-build:
+    name: iOS Build & Submit
+    instance_type: mac_mini_m1
+    environment:
+      ios_signing:
+        provisioning_profiles:
+          - provider: app-store-connect
+            app_id: 6781890309
+      xcode: latest
+      cocoapods: default
+    trigger:
+      branch:
+        pattern: main
+        include_pull_requests: false
+    scripts:
+      - name: Install dependencies
+        script: npm ci
+      - name: Install EAS CLI
+        script: npm install -g eas-cli
+      - name: Build iOS
+        script: |
+          eas build \
+            --platform ios \
+            --auto-submit \
+            --non-interactive \
+            --wait
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+    artifacts:
+      - build/ios/ipa/**/*.ipa
+      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/Products/Release-iphoneos/*.app
+    publishing:
+      email:
+        recipients:
+          - fredndung@hotmail.com
+        notify:
+          success: true
+          failure: true
