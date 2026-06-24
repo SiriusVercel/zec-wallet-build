@@ -22,9 +22,8 @@ export async function setBiometricEnabled(enabled: boolean): Promise<void> {
 export async function authenticate(reason: string): Promise<boolean> {
   const result = await LocalAuthentication.authenticateAsync({
     promptMessage: reason,
-    fallbackLabel: 'Use Passcode',
     cancelLabel: 'Cancel',
-    disableDeviceFallback: false,
+    disableDeviceFallback: true,
   })
   return result.success
 }

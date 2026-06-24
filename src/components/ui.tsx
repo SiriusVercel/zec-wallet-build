@@ -5,6 +5,7 @@ import {
   ActivityIndicator, ViewStyle, TextStyle,
 } from 'react-native'
 import { Colors, Typography, Spacing, Radius } from '../theme'
+import { ArrowDownIcon, ArrowUpIcon } from './Icons'
 
 // ── Button ───────────────────────────────────────────────────────────────────
 
@@ -29,13 +30,18 @@ export function Button({ label, onPress, variant = 'primary', loading, disabled,
         styles.btn,
         isPrimary && styles.btnPrimary,
         isOutline && styles.btnOutline,
-        (disabled || loading) && styles.btnDisabled,
+        isPrimary && (disabled || loading) && styles.btnPrimaryDisabled,
+        !isPrimary && (disabled || loading) && styles.btnDisabled,
         style,
       ]}
     >
       {loading
         ? <ActivityIndicator color={isPrimary ? Colors.bg : Colors.zec} />
-        : <Text style={[styles.btnLabel, isOutline && styles.btnLabelOutline]}>
+        : <Text style={[
+            styles.btnLabel,
+            isOutline && styles.btnLabelOutline,
+            isPrimary && (disabled || loading) && styles.btnLabelDisabled,
+          ]}>
             {label}
           </Text>
       }
@@ -133,9 +139,9 @@ export function TxRow({ amount, timestamp, confirmed, txid, onPress }: TxRowProp
   return (
     <TouchableOpacity onPress={onPress} style={styles.txRow} activeOpacity={0.7}>
       <View style={[styles.txIcon, { backgroundColor: isIn ? 'rgba(0,200,150,0.15)' : 'rgba(255,68,68,0.15)' }]}>
-        <Text style={{ color: isIn ? Colors.success : Colors.error, fontSize: 18 }}>
-          {isIn ? '↓' : '↑'}
-        </Text>
+        {isIn
+          ? <ArrowDownIcon size={16} color={Colors.success} />
+          : <ArrowUpIcon size={16} color={Colors.error} />}
       </View>
       <View style={styles.txInfo}>
         <Text style={styles.txId}>{txid.slice(0, 12)}...</Text>
@@ -157,9 +163,11 @@ const styles = StyleSheet.create({
   },
   btnPrimary:  { backgroundColor: Colors.zec },
   btnOutline:  { borderWidth: 1.5, borderColor: Colors.zec },
-  btnDisabled: { opacity: 0.4 },
-  btnLabel:    { ...Typography.bodyBold, color: Colors.bg, fontSize: 16 },
-  btnLabelOutline: { color: Colors.zec },
+  btnDisabled: { opacity: 0.38 },
+  btnPrimaryDisabled: { backgroundColor: '#5A4600' },
+  btnLabel:         { ...Typography.bodyBold, color: Colors.bg, fontSize: 16 },
+  btnLabelOutline:  { color: Colors.zec },
+  btnLabelDisabled: { color: Colors.textMuted },
 
   card: {
     backgroundColor: Colors.bgCard, borderRadius: Radius.lg,

@@ -59,7 +59,7 @@ export default function ImportWalletScreen({ onDone, onBack }: Props) {
         ufvk:     derived.ufvk,
         birthday: derived.birthday,
       })
-      backupSeed(mnemonic)
+      backupSeed(mnemonic, { address: derived.address, ufvk: derived.ufvk, birthday: derived.birthday })
       onDone()
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Unknown error'

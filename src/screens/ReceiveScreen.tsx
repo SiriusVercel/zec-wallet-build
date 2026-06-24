@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import {
   View, Text, StyleSheet, SafeAreaView, ScrollView,
   TouchableOpacity, ActivityIndicator, Share,
@@ -9,17 +9,17 @@ import * as Clipboard from 'expo-clipboard'
 import QRCode from 'react-native-qrcode-svg'
 import { Colors, Typography, Spacing, Radius } from '../theme'
 import { getWalletInfo } from '../services/zcash'
+import { ArrowLeftIcon, CheckIcon } from '../components/Icons'
+import { scheduleClipboardClear } from '../services/security'
 
 interface Props { onBack: () => void }
-
-type Pool = 'shielded' | 'transparent'
 
 export default function ReceiveScreen({ onBack }: Props) {
   const { t } = useTranslation()
   const [address,  setAddress]  = useState<string>('')
   const [loading,  setLoading]  = useState<boolean>(true)
-  const [pool,     setPool]     = useState<Pool>('shielded')
   const [copied,   setCopied]   = useState<boolean>(false)
+  const clipboardClearRef = useRef<(() => void) | null>(null)
 
   useEffect(() => {
     getWalletInfo()
@@ -31,6 +31,8 @@ export default function ReceiveScreen({ onBack }: Props) {
     await Clipboard.setStringAsync(address)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+    if (clipboardClearRef.current) clipboardClearRef.current()
+    clipboardClearRef.current = scheduleClipboardClear(120_000)
   }
 
   async function shareAddress() {
@@ -43,36 +45,13 @@ export default function ReceiveScreen({ onBack }: Props) {
 
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={onBack}>
-            <Text style={styles.back}>{`← ${t('common.back')}`}</Text>
+          <TouchableOpacity onPress={onBack} style={styles.backBtn}>
+            <ArrowLeftIcon size={16} color={Colors.zec} />
+            <Text style={styles.back}>{t('common.back')}</Text>
           </TouchableOpacity>
           <Text style={styles.title}>{t('receive.title')}</Text>
           <View style={{ width: 60 }} />
         </View>
-
-        {/* Pool toggle */}
-        <View style={styles.poolToggle}>
-          {(['shielded', 'transparent'] as Pool[]).map(p => (
-            <TouchableOpacity
-              key={p}
-              style={[styles.poolBtn, pool === p && styles.poolBtnActive]}
-              onPress={() => setPool(p)}
-            >
-              <Text style={[styles.poolBtnLabel, pool === p && styles.poolBtnLabelActive]}>
-                {p === 'shielded' ? t('receive.shielded') : t('receive.transparent')}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* Warning for transparent */}
-        {pool === 'transparent' && (
-          <View style={styles.warnCard}>
-            <Text style={styles.warnText}>
-              ⚠️ {t('receive.transparentWarning')}
-            </Text>
-          </View>
-        )}
 
         {/* QR Code */}
         <View style={styles.qrWrap}>
@@ -108,9 +87,12 @@ export default function ReceiveScreen({ onBack }: Props) {
             onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); copyAddress() }}
             disabled={loading || !address}
           >
-            <Text style={styles.actionLabelPrimary}>
-              {copied ? `✓ ${t('receive.copied')}` : t('receive.copy')}
-            </Text>
+            <View style={styles.actionLabelRow}>
+              {copied && <CheckIcon size={14} color={Colors.bg} />}
+              <Text style={styles.actionLabelPrimary}>
+                {copied ? t('receive.copied') : t('receive.copy')}
+              </Text>
+            </View>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -127,6 +109,14 @@ export default function ReceiveScreen({ onBack }: Props) {
           <Text style={styles.doneBtnLabel}>{t('receive.done')}</Text>
         </TouchableOpacity>
 
+        {/* Privacy note */}
+        <View style={styles.privacyNote}>
+          <View style={styles.privacyDot} />
+          <Text style={styles.privacyText}>
+            This unified address (u1) accepts both shielded and transparent payments. Shielded transactions encrypt sender, receiver, and amount on-chain.
+          </Text>
+        </View>
+
       </ScrollView>
     </SafeAreaView>
   )
@@ -140,25 +130,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center',
     justifyContent: 'space-between', width: '100%',
   },
-  back:  { ...Typography.body, color: Colors.zec },
+  backBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  back:    { ...Typography.body, color: Colors.zec },
   title: { ...Typography.heading3, color: Colors.textPrimary },
-
-  poolToggle: {
-    flexDirection: 'row', backgroundColor: Colors.bgCard,
-    borderRadius: Radius.full, padding: 4,
-    borderWidth: 1, borderColor: Colors.border, width: '100%',
-  },
-  poolBtn:            { flex: 1, paddingVertical: Spacing.sm, borderRadius: Radius.full, alignItems: 'center' },
-  poolBtnActive:      { backgroundColor: Colors.zec },
-  poolBtnLabel:       { ...Typography.caption, color: Colors.textSecondary },
-  poolBtnLabelActive: { ...Typography.caption, color: Colors.bg, fontWeight: '700' },
-
-  warnCard: {
-    backgroundColor: 'rgba(255,179,71,0.1)', borderRadius: Radius.md,
-    padding: Spacing.md, borderWidth: 1, borderColor: 'rgba(255,179,71,0.3)',
-    width: '100%',
-  },
-  warnText: { ...Typography.caption, color: Colors.warning, lineHeight: 18 },
 
   qrWrap: { alignItems: 'center', marginVertical: Spacing.sm },
   qrBox: {
@@ -180,6 +154,7 @@ const styles = StyleSheet.create({
     alignItems: 'center', borderWidth: 1.5, borderColor: Colors.zec,
   },
   actionPrimary:      { backgroundColor: Colors.zec },
+  actionLabelRow:     { flexDirection: 'row', alignItems: 'center', gap: 4 },
   actionLabelPrimary: { ...Typography.bodyBold, color: Colors.bg },
   actionLabel:        { ...Typography.bodyBold, color: Colors.zec },
 
@@ -189,4 +164,17 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: Colors.border, marginTop: Spacing.sm,
   },
   doneBtnLabel: { ...Typography.bodyBold, color: Colors.textPrimary },
+
+  privacyNote: {
+    flexDirection: 'row', alignItems: 'flex-start', gap: 8,
+    paddingHorizontal: Spacing.md, paddingVertical: Spacing.md,
+    marginTop: Spacing.sm,
+  },
+  privacyDot: {
+    width: 6, height: 6, borderRadius: 3,
+    backgroundColor: Colors.zec, marginTop: 5,
+  },
+  privacyText: {
+    flex: 1, fontSize: 12, color: Colors.textMuted, lineHeight: 18,
+  },
 })

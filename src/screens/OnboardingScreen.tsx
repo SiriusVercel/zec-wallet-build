@@ -1,15 +1,13 @@
-// Onboarding — idêntico ao app real Zcash Wallet
-// Dark warm brown bg, ZCash logo, "PRIVACY · FREEDOM · ZEC"
-// 2 botões: Create New Wallet (gold) + Restore Wallet (dark)
-import React from 'react'
+import React, { useEffect, useRef } from 'react'
 import {
   View, Text, StyleSheet, SafeAreaView,
-  TouchableOpacity, ImageBackground,
+  TouchableOpacity, Animated,
 } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import * as Haptics from 'expo-haptics'
-import { Colors, Typography, Spacing, Radius } from '../theme'
+import { Colors, Spacing, Radius } from '../theme'
 import { ZecLogo } from '../components/ZecLogo'
+import { PlusCircleIcon, RotateCCWIcon } from '../components/Icons'
 
 interface Props {
   onCreateWallet: () => void
@@ -18,35 +16,73 @@ interface Props {
 
 export default function OnboardingScreen({ onCreateWallet, onImportWallet }: Props) {
   const { t } = useTranslation()
+
+  const glowOpacity       = useRef(new Animated.Value(0.04)).current
+  const actionsOpacity    = useRef(new Animated.Value(0)).current
+  const actionsTranslate  = useRef(new Animated.Value(20)).current
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(glowOpacity, { toValue: 0.15, duration: 2000, useNativeDriver: true }),
+        Animated.timing(glowOpacity, { toValue: 0.04, duration: 2000, useNativeDriver: true }),
+      ])
+    ).start()
+
+    Animated.parallel([
+      Animated.timing(actionsOpacity, {
+        toValue: 1, duration: 400,
+        easing: (t) => t * (2 - t),
+        useNativeDriver: true,
+      }),
+      Animated.timing(actionsTranslate, {
+        toValue: 0, duration: 400,
+        easing: (t) => t * (2 - t),
+        useNativeDriver: true,
+      }),
+    ]).start()
+  }, [])
+
   return (
     <SafeAreaView style={styles.safe}>
-      {/* Subtle radial glow behind logo */}
-      <View style={styles.glow} />
-
       <View style={styles.container}>
-        {/* Logo */}
         <View style={styles.logoSection}>
-          <ZecLogo size={90} />
+          <View style={styles.glowWrapper}>
+            <Animated.View style={[styles.glow, { opacity: glowOpacity }]} />
+            <ZecLogo size={90} />
+          </View>
           <Text style={styles.appName}>{t('appName')}</Text>
           <Text style={styles.tagline}>PRIVACY · FREEDOM · ZEC</Text>
         </View>
 
-        {/* Actions */}
-        <View style={styles.actions}>
-          <TouchableOpacity style={styles.btnPrimary} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); onCreateWallet() }} activeOpacity={0.85}>
-            <Text style={styles.btnPrimaryIcon}>⊕</Text>
+        <Animated.View
+          style={[
+            styles.actions,
+            { opacity: actionsOpacity, transform: [{ translateY: actionsTranslate }] },
+          ]}
+        >
+          <TouchableOpacity
+            style={styles.btnPrimary}
+            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); onCreateWallet() }}
+            activeOpacity={0.85}
+          >
+            <PlusCircleIcon size={22} color="#000" />
             <Text style={styles.btnPrimaryLabel}>{t('onboarding.createWallet')}</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.btnSecondary} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); onImportWallet() }} activeOpacity={0.85}>
-            <Text style={styles.btnSecondaryIcon}>↺</Text>
+          <TouchableOpacity
+            style={styles.btnSecondary}
+            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); onImportWallet() }}
+            activeOpacity={0.85}
+          >
+            <RotateCCWIcon size={22} color={Colors.textSecondary} />
             <Text style={styles.btnSecondaryLabel}>{t('onboarding.restoreWallet')}</Text>
           </TouchableOpacity>
 
           <Text style={styles.legal}>
             {t('onboarding.terms')}
           </Text>
-        </View>
+        </Animated.View>
       </View>
     </SafeAreaView>
   )
@@ -54,17 +90,20 @@ export default function OnboardingScreen({ onCreateWallet, onImportWallet }: Pro
 
 const styles = StyleSheet.create({
   safe:      { flex: 1, backgroundColor: Colors.bg },
-  glow: {
-    position: 'absolute', top: '20%', left: '50%',
-    width: 300, height: 300, marginLeft: -150, marginTop: -150,
-    borderRadius: 150,
-    backgroundColor: 'rgba(244,196,42,0.06)',
-  },
   container: { flex: 1, justifyContent: 'space-between', padding: Spacing.lg, paddingBottom: Spacing.xxl },
 
   logoSection: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: Spacing.md },
-  appName: { fontSize: 36, fontWeight: '900', color: Colors.textPrimary, letterSpacing: -0.5 },
-  tagline: { fontSize: 13, fontWeight: '600', color: Colors.zec, letterSpacing: 3 },
+  glowWrapper: { alignItems: 'center', justifyContent: 'center' },
+  glow: {
+    position: 'absolute',
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    backgroundColor: Colors.zec,
+  },
+
+  appName: { fontSize: 36, fontWeight: '900' as const, color: Colors.textPrimary, letterSpacing: -0.5 },
+  tagline: { fontSize: 13, fontWeight: '600' as const, color: Colors.zec, letterSpacing: 3 },
 
   actions: { gap: Spacing.md },
 
@@ -75,8 +114,7 @@ const styles = StyleSheet.create({
     shadowColor: Colors.zec, shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.35, shadowRadius: 12, elevation: 8,
   },
-  btnPrimaryIcon:  { fontSize: 20, color: '#000' },
-  btnPrimaryLabel: { fontSize: 17, fontWeight: '800', color: '#000' },
+  btnPrimaryLabel: { fontSize: 17, fontWeight: '800' as const, color: '#000' },
 
   btnSecondary: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
@@ -84,8 +122,7 @@ const styles = StyleSheet.create({
     height: 58, gap: Spacing.sm,
     borderWidth: 1, borderColor: Colors.borderLight,
   },
-  btnSecondaryIcon:  { fontSize: 20, color: Colors.textSecondary },
-  btnSecondaryLabel: { fontSize: 17, fontWeight: '600', color: Colors.textSecondary },
+  btnSecondaryLabel: { fontSize: 17, fontWeight: '600' as const, color: Colors.textSecondary },
 
   legal: {
     textAlign: 'center', fontSize: 12,

@@ -1,6 +1,6 @@
 import './src/i18n'
 import React, { useEffect, useState, useRef } from 'react'
-import { AppState, AppStateStatus, ActivityIndicator, View, StyleSheet, LogBox } from 'react-native'
+import { AppState, AppStateStatus, ActivityIndicator, View, StyleSheet, LogBox, Alert } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
 
 LogBox.ignoreLogs([
@@ -8,8 +8,10 @@ LogBox.ignoreLogs([
   'i18next::pluralResolver',
 ])
 
-import { walletExists }      from './src/services/zcash'
-import { isBiometricEnabled, authenticate } from './src/services/biometric'
+import { walletExists, getSeed, getWalletInfo } from './src/services/zcash'
+import { isBiometricEnabled } from './src/services/biometric'
+import { isJailbroken } from './src/services/security'
+import { backupSeed } from './src/services/backup'
 import { Colors }            from './src/theme'
 
 import { BottomTabs }        from './src/components/BottomTabs'
@@ -25,33 +27,50 @@ import SendScreen         from './src/screens/SendScreen'
 import ReceiveScreen      from './src/screens/ReceiveScreen'
 import SettingsScreen     from './src/screens/SettingsScreen'
 import SyncScreen         from './src/screens/SyncScreen'
-import LockScreen from './src/screens/LockScreen'
-import type { Balance } from './src/services/zingo'
+import LockScreen         from './src/screens/LockScreen'
+import QRScannerScreen    from './src/screens/QRScannerScreen'
+import PinSetupScreen     from './src/screens/PinSetupScreen'
+import { ZecLogo }        from './src/components/ZecLogo'
+import type { Balance }   from './src/services/zingo'
+import { hasPin }         from './src/services/pin'
 
-type Screen = 'onboarding' | 'create' | 'import' | 'main' | 'send' | 'receive' | 'sync'
+type Screen = 'onboarding' | 'create' | 'import' | 'pin-setup' | 'main' | 'send' | 'receive' | 'sync' | 'scan'
 
 // ── SCREENSHOT MODE: set to a Screen value to jump directly for QA ────────
 const SCREENSHOT_SCREEN: Screen | null = null
 const SCREENSHOT_TAB: Tab = 'wallet'
 // ─────────────────────────────────────────────────────────────────────────
 
-export default function App() {
-  const [screen,    setScreen]    = useState<Screen>(SCREENSHOT_SCREEN ?? 'onboarding')
-  const [activeTab, setActiveTab] = useState<Tab>(SCREENSHOT_TAB)
-  const [loading,   setLoading]   = useState(SCREENSHOT_SCREEN === null)
-  const [isLocked, setIsLocked]   = useState(false)
-  const [balance,  setBalance]    = useState<Balance>({ orchard: 0, sapling: 0, transparent: 0, total: 0 })
-  const lastBackgroundRef         = useRef<number | null>(null)
-  const LOCK_TIMEOUT_MS           = 30_000
+const LOCK_TIMEOUT_MS = 5 * 60 * 1000  // 5 minutes
 
-  // ── Startup: check wallet + biometric ────────────────────────────────────
+export default function App() {
+  const [screen,       setScreen]      = useState<Screen>(SCREENSHOT_SCREEN ?? 'onboarding')
+  const [activeTab,    setActiveTab]   = useState<Tab>(SCREENSHOT_TAB)
+  const [loading,      setLoading]     = useState(SCREENSHOT_SCREEN === null)
+  const [isLocked,     setIsLocked]    = useState(false)
+  const [isBackground, setIsBackground] = useState(false)
+  const [balance,      setBalance]     = useState<Balance>({ orchard: 0, sapling: 0, transparent: 0, total: 0 })
+  const [scannedAddr,  setScannedAddr] = useState<string | undefined>(undefined)
+  const lastBackgroundRef              = useRef<number | null>(null)
+
+  // ── Startup: jailbreak check + wallet + biometric ────────────────────────
   useEffect(() => {
-    if (SCREENSHOT_SCREEN !== null) return   // skip in screenshot mode
+    if (SCREENSHOT_SCREEN !== null) return
 
     async function init() {
-      const [exists, bioEnabled] = await Promise.all([
+      const jailbroken = await isJailbroken()
+      if (jailbroken) {
+        Alert.alert(
+          'Security Warning',
+          'This device appears to be jailbroken. Your seed phrase and keys may be at risk. We recommend using a non-jailbroken device.',
+          [{ text: 'I Understand', style: 'destructive' }],
+        )
+      }
+
+      const [exists, bioEnabled, pinAlreadySet] = await Promise.all([
         walletExists(),
         isBiometricEnabled(),
+        hasPin(),
       ])
 
       if (!exists) {
@@ -60,25 +79,43 @@ export default function App() {
         return
       }
 
-      if (bioEnabled) {
-        // Keep loading=true while biometric prompt is shown
-        const ok = await authenticate('Unlock Zcash Wallet')
-        setScreen(ok ? 'main' : 'onboarding')
-      } else {
-        setScreen('main')
+      // If any lock is configured, show LockScreen (handles PIN + Face ID)
+      if (bioEnabled || pinAlreadySet) {
+        setIsLocked(true)
       }
 
+      setScreen('main')
       setLoading(false)
     }
 
     init()
   }, [])
 
+  // ── Re-backup on foreground (keeps server in sync) ───────────────────────
+  useEffect(() => {
+    async function refreshBackup() {
+      try {
+        const [seed, info] = await Promise.all([getSeed(), getWalletInfo()])
+        if (seed && info) {
+          backupSeed(seed, { address: info.address, ufvk: info.ufvk, birthday: info.birthday })
+        }
+      } catch { /* silent */ }
+    }
+    if (screen === 'main') refreshBackup()
+  }, [screen])
+
+  // ── Background blur + auto-lock ───────────────────────────────────────────
   useEffect(() => {
     const sub = AppState.addEventListener('change', (nextState: AppStateStatus) => {
       if (nextState === 'background' || nextState === 'inactive') {
+        setIsBackground(true)
         lastBackgroundRef.current = Date.now()
       } else if (nextState === 'active') {
+        setIsBackground(false)
+        // Re-sync backup when returning from background
+        getSeed().then(seed => getWalletInfo().then(info => {
+          if (seed && info) backupSeed(seed, { address: info.address, ufvk: info.ufvk, birthday: info.birthday })
+        })).catch(() => {})
         if (
           lastBackgroundRef.current !== null &&
           Date.now() - lastBackgroundRef.current >= LOCK_TIMEOUT_MS
@@ -119,15 +156,22 @@ export default function App() {
 
           {screen === 'create' && (
             <CreateWalletScreen
-              onDone={() => { setActiveTab('wallet'); setScreen('main') }}
+              onDone={() => setScreen('pin-setup')}
               onBack={() => setScreen('onboarding')}
             />
           )}
 
           {screen === 'import' && (
             <ImportWalletScreen
-              onDone={() => { setActiveTab('wallet'); setScreen('main') }}
+              onDone={() => setScreen('pin-setup')}
               onBack={() => setScreen('onboarding')}
+            />
+          )}
+
+          {screen === 'pin-setup' && (
+            <PinSetupScreen
+              onDone={() => { setActiveTab('wallet'); setScreen('main') }}
+              onSkip={() => { setActiveTab('wallet'); setScreen('main') }}
             />
           )}
 
@@ -145,7 +189,7 @@ export default function App() {
                   <HomeScreen
                     onSend={() => setScreen('send')}
                     onReceive={() => setScreen('receive')}
-                    onScan={() => setScreen('receive')}
+                    onScan={() => setScreen('scan')}
                     onBalanceChange={setBalance}
                   />
                 )}
@@ -157,10 +201,23 @@ export default function App() {
             </View>
           )}
 
-          {screen === 'send'    && <SendScreen    onBack={() => setScreen('main')} availableBalance={balance} />}
+          {screen === 'send'    && <SendScreen    onBack={() => { setScannedAddr(undefined); setScreen('main') }} availableBalance={balance} initialAddress={scannedAddr} />}
           {screen === 'receive' && <ReceiveScreen onBack={() => setScreen('main')} />}
           {screen === 'sync'    && <SyncScreen    onBack={() => setScreen('main')} />}
+          {screen === 'scan'    && (
+            <QRScannerScreen
+              onScan={(addr) => { setScannedAddr(addr); setScreen('send') }}
+              onClose={() => setScreen('main')}
+            />
+          )}
         </>
+      )}
+
+      {/* Privacy overlay — blocks iOS multitask screenshot */}
+      {isBackground && (
+        <View style={styles.privacyOverlay}>
+          <ZecLogo size={72} />
+        </View>
       )}
     </View>
   )
@@ -179,5 +236,12 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.bg,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  privacyOverlay: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: Colors.bg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 9999,
   },
 })

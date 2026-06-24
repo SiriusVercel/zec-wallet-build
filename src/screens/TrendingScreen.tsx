@@ -14,6 +14,7 @@ import Svg, { Polyline, Line as SvgLine, Text as SvgText } from 'react-native-sv
 import { useTranslation } from 'react-i18next'
 import { Colors, Spacing, Radius, Typography } from '../theme'
 import { BottomTabs, Tab } from '../components/BottomTabs'
+import { ArrowUpRightIcon, ArrowDownRightIcon, WalletIcon } from '../components/Icons'
 import { getCurrentPrice, getPriceHistory, zecToUsd, PricePoint, Period } from '../services/price'
 import { getWalletInfo } from '../services/zcash'
 import { getBalance } from '../services/zingo'
@@ -27,6 +28,7 @@ const PAD_TOP      = 12
 const PAD_BOTTOM   = 28
 
 const PERIODS: Period[] = ['24H', '7D', '30D', '1Y']
+
 
 interface Props {
   onTab: (t: Tab) => void
@@ -172,8 +174,8 @@ export default function TrendingScreen({ onTab }: Props) {
   const fetchHistory = useCallback((p: Period) => {
     setLoadingChart(true)
     getPriceHistory(p)
-      .then(pts => setHistory(pts))
-      .catch(() => { /* mantém dados anteriores */ })
+      .then(pts => { setHistory(pts) })
+      .catch(() => { setHistory([]) })
       .finally(() => setLoadingChart(false))
   }, [])
 
@@ -216,12 +218,17 @@ export default function TrendingScreen({ onTab }: Props) {
                 styles.changeBadge,
                 { backgroundColor: changePositive ? Colors.successBg : Colors.errorBg },
               ]}>
-                <Text style={[
-                  styles.changeText,
-                  { color: changePositive ? Colors.success : Colors.error },
-                ]}>
-                  {changePositive ? '↗' : '↘'} {Math.abs(changePct).toFixed(2)}%
-                </Text>
+                <View style={styles.changeBadgeInner}>
+                  {changePositive
+                    ? <ArrowUpRightIcon size={14} color={Colors.success} />
+                    : <ArrowDownRightIcon size={14} color={Colors.error} />}
+                  <Text style={[
+                    styles.changeText,
+                    { color: changePositive ? Colors.success : Colors.error },
+                  ]}>
+                    {Math.abs(changePct).toFixed(2)}%
+                  </Text>
+                </View>
               </View>
             )}
           </View>
@@ -233,7 +240,7 @@ export default function TrendingScreen({ onTab }: Props) {
           <View style={styles.balanceCard}>
             <View style={styles.balanceLeft}>
               <View style={styles.walletIcon}>
-                <Text style={{ fontSize: 16 }}>📋</Text>
+                <WalletIcon size={16} color={Colors.zec} />
               </View>
               <Text style={styles.balanceLabel}>{t('trending.yourBalance')}</Text>
             </View>
@@ -310,8 +317,9 @@ const styles = StyleSheet.create({
   priceHero:    { gap: 4 },
   priceRow:     { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
   priceUsd:     { fontSize: 40, fontWeight: '900', color: Colors.zec, letterSpacing: -1 },
-  changeBadge:  { borderRadius: Radius.full, paddingHorizontal: 10, paddingVertical: 4 },
-  changeText:   { fontSize: 14, fontWeight: '700' },
+  changeBadge:      { borderRadius: Radius.full, paddingHorizontal: 10, paddingVertical: 4 },
+  changeBadgeInner: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  changeText:       { fontSize: 14, fontWeight: '700' },
   priceSub:     { fontSize: 13, color: Colors.textMuted },
 
   // Saldo

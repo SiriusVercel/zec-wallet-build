@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import {
   View, Text, StyleSheet, SafeAreaView, ScrollView,
-  TouchableOpacity, Alert, Switch, Modal, ActivityIndicator,
+  TouchableOpacity, Alert, Switch, Modal, ActivityIndicator, Linking,
 } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import * as Haptics from 'expo-haptics'
 import * as Clipboard from 'expo-clipboard'
+import { usePreventScreenCapture } from 'expo-screen-capture'
+import { scheduleClipboardClear } from '../services/security'
 import { Colors, Typography, Spacing, Radius } from '../theme'
 import i18n from '../i18n'
 import {
@@ -14,9 +16,12 @@ import {
   setBiometricEnabled,
   authenticate,
 } from '../services/biometric'
+import { isPinEnabled, verifyPin, clearPin } from '../services/pin'
 import { getSeed, getWalletInfo, clearWallet } from '../services/zcash'
 import { exportBackupKey } from '../services/backup'
 import { KeyIcon, TrashIcon, ChevronRightIcon, WarningIcon } from '../components/Icons'
+import PinSetupScreen from './PinSetupScreen'
+import PinScreen from './PinScreen'
 
 interface Props {
   onWalletDeleted: () => void
@@ -24,22 +29,30 @@ interface Props {
 
 export default function SettingsScreen({ onWalletDeleted }: Props) {
   const { t } = useTranslation()
+  usePreventScreenCapture()
   const [address,            setAddress]            = useState<string | null>(null)
   const [biometricAvailable, setBiometricAvailable] = useState(false)
   const [biometricEnabled,   setBiometricEnabledState] = useState(false)
+  const [pinEnabled,         setPinEnabledState]    = useState(false)
+  const [showPinSetup,       setShowPinSetup]       = useState(false)
+  const [showPinVerify,      setShowPinVerify]      = useState(false)
+  const [pinVerifyCallback,  setPinVerifyCallback]  = useState<(() => void) | null>(null)
   const [seedWords,          setSeedWords]          = useState<string[]>([])
   const [seedModalVisible,   setSeedModalVisible]   = useState(false)
   const [loadingSeed,        setLoadingSeed]        = useState(false)
+  const clipboardClearRef = useRef<(() => void) | null>(null)
 
   useEffect(() => {
     async function init() {
-      const [available, enabled, info] = await Promise.all([
+      const [available, enabled, pinOn, info] = await Promise.all([
         isBiometricAvailable(),
         isBiometricEnabled(),
+        isPinEnabled(),
         getWalletInfo(),
       ])
       setBiometricAvailable(available)
       setBiometricEnabledState(enabled)
+      setPinEnabledState(pinOn)
       if (info) setAddress(info.address)
     }
     init()
@@ -55,25 +68,39 @@ export default function SettingsScreen({ onWalletDeleted }: Props) {
     setBiometricEnabledState(value)
   }
 
+  // Unified auth: try Face ID if available+enabled, else PIN, else allow directly
+  async function requireAuth(onSuccess: () => void): Promise<void> {
+    const [bioAvail, bioOn, pinOn] = await Promise.all([
+      isBiometricAvailable(),
+      isBiometricEnabled(),
+      isPinEnabled(),
+    ])
+    if (bioAvail && bioOn) {
+      const ok = await authenticate(t('settings.authPromptPhrase'))
+      if (ok) { onSuccess(); return }
+      // Face ID failed — fall through to PIN if available
+    }
+    if (pinOn) {
+      setPinVerifyCallback(() => onSuccess)
+      setShowPinVerify(true)
+      return
+    }
+    // No lock configured — allow directly
+    onSuccess()
+  }
+
   async function handleViewSeed() {
     setLoadingSeed(true)
-    try {
-      const ok = await authenticate(t('settings.authPromptPhrase'))
-      if (!ok) {
-        setLoadingSeed(false)
-        return
-      }
-      const seed = await getSeed()
-      if (!seed) {
-        Alert.alert(t('common.error'), 'Recovery phrase not found.')
-        setLoadingSeed(false)
-        return
-      }
+    const seed = await getSeed().catch(() => null)
+    setLoadingSeed(false)
+    if (!seed) {
+      Alert.alert(t('common.error'), 'Recovery phrase not found.')
+      return
+    }
+    requireAuth(() => {
       setSeedWords(seed.trim().split(/\s+/))
       setSeedModalVisible(true)
-    } finally {
-      setLoadingSeed(false)
-    }
+    })
   }
 
   function handleDeleteWallet() {
@@ -108,19 +135,22 @@ export default function SettingsScreen({ onWalletDeleted }: Props) {
   }
 
   async function handleExportBackupKey() {
-    const ok = await authenticate(t('settings.authPromptPhrase'))
-    if (!ok) return
     const key = await exportBackupKey()
     if (!key) {
       Alert.alert(t('common.error'), 'No recovery key found for this wallet.')
       return
     }
-    await Clipboard.setStringAsync(key)
-    Alert.alert(
-      'Recovery Key Copied',
-      'Your recovery key has been copied to clipboard. Store it securely — it is needed to recover your wallet from server backup.',
-    )
+    requireAuth(async () => {
+      await Clipboard.setStringAsync(key)
+      if (clipboardClearRef.current) clipboardClearRef.current()
+      clipboardClearRef.current = scheduleClipboardClear(60_000)
+      Alert.alert(
+        'Recovery Key Copied',
+        'Your recovery key has been copied to clipboard. It will be cleared in 60 seconds.',
+      )
+    })
   }
+
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -131,6 +161,47 @@ export default function SettingsScreen({ onWalletDeleted }: Props) {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('settings.securitySection')}</Text>
           <View style={styles.card}>
+            {/* PIN */}
+            <View style={styles.switchRow}>
+              <View style={styles.switchLabel}>
+                <Text style={styles.rowLabel}>6-Digit PIN</Text>
+                <Text style={styles.rowHint}>
+                  {pinEnabled ? 'PIN is active — tap to change' : 'Add a PIN lock to your wallet'}
+                </Text>
+              </View>
+              <Switch
+                value={pinEnabled}
+                onValueChange={(val) => {
+                  if (val) {
+                    setShowPinSetup(true)
+                  } else {
+                    Alert.alert('Remove PIN', 'Are you sure you want to remove your PIN?', [
+                      { text: 'Cancel', style: 'cancel' },
+                      { text: 'Remove', style: 'destructive', onPress: async () => {
+                          await clearPin()
+                          setPinEnabledState(false)
+                        },
+                      },
+                    ])
+                  }
+                }}
+                trackColor={{ false: Colors.border, true: Colors.zec }}
+                thumbColor="#fff"
+              />
+            </View>
+            {pinEnabled && (
+              <>
+                <View style={styles.divider} />
+                <TouchableOpacity style={styles.actionRow} onPress={() => setShowPinSetup(true)}>
+                  <View style={styles.actionLabelRow}>
+                    <Text style={styles.actionLabel}>Change PIN</Text>
+                  </View>
+                  <ChevronRightIcon size={20} color={Colors.textMuted} />
+                </TouchableOpacity>
+              </>
+            )}
+            <View style={styles.divider} />
+            {/* Face ID */}
             <View style={styles.switchRow}>
               <View style={styles.switchLabel}>
                 <Text style={styles.rowLabel}>{t('settings.faceId')}</Text>
@@ -150,6 +221,14 @@ export default function SettingsScreen({ onWalletDeleted }: Props) {
             </View>
           </View>
         </View>
+
+        {/* PIN Setup Modal */}
+        <Modal visible={showPinSetup} animationType="slide" presentationStyle="fullScreen">
+          <PinSetupScreen
+            onDone={() => { setShowPinSetup(false); setPinEnabledState(true) }}
+            onSkip={() => setShowPinSetup(false)}
+          />
+        </Modal>
 
         {/* ── RECOVERY ── */}
         <View style={styles.section}>
@@ -225,6 +304,24 @@ export default function SettingsScreen({ onWalletDeleted }: Props) {
           </Text>
         </View>
       </ScrollView>
+
+      {/* ── PIN verify modal (for sensitive actions when Face ID not available) ── */}
+      <Modal visible={showPinVerify} animationType="slide" presentationStyle="fullScreen">
+        <PinScreen
+          title="Confirm Identity"
+          subtitle="Enter your PIN to continue"
+          verify={verifyPin}
+          onSuccess={() => {
+            setShowPinVerify(false)
+            if (pinVerifyCallback) pinVerifyCallback()
+            setPinVerifyCallback(null)
+          }}
+          onCancel={() => {
+            setShowPinVerify(false)
+            setPinVerifyCallback(null)
+          }}
+        />
+      </Modal>
 
       {/* ── Recovery phrase modal ── */}
       <Modal

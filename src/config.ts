@@ -1,7 +1,5 @@
 // src/config.ts
-export const API_BASE = __DEV__
-  ? 'http://localhost:8000'
-  : 'https://api.zcashwallet.app'
+export const API_BASE = 'https://api.zcashwallet.app'
 
 export const KRAKEN_OHLC_URL = 'https://api.kraken.com/0/public/OHLC'
 export const KRAKEN_TICKER_URL = 'https://api.kraken.com/0/public/Ticker?pair=XZECZUSD'

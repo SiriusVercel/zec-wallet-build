@@ -9,6 +9,7 @@ import {
 } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { Colors, Typography, Spacing, Radius } from '../theme'
+import { LightningIcon, LockIcon, InfoIcon } from '../components/Icons'
 import { getSyncStatus, startSync, SyncStatus } from '../services/zingo'
 import { POLL_INTERVAL_MS, POLL_MAX_RETRIES } from '../config'
 
@@ -100,7 +101,7 @@ export default function SyncScreen({ onBack }: Props) {
       <View style={styles.container}>
 
         <View style={styles.iconWrap}>
-          <Text style={styles.icon}>⚡</Text>
+          <LightningIcon size={40} color={Colors.zec} />
         </View>
 
         <Text style={styles.title}>{t('sync.title')}</Text>
@@ -137,7 +138,10 @@ export default function SyncScreen({ onBack }: Props) {
 
           <View style={styles.statRow}>
             <Text style={styles.statLabel}>POOL</Text>
-            <Text style={[styles.statValue, { color: Colors.zec }]}>🔒 Orchard</Text>
+            <View style={styles.poolValueRow}>
+              <LockIcon size={14} color={Colors.zec} />
+              <Text style={[styles.statValue, { color: Colors.zec }]}>Orchard</Text>
+            </View>
           </View>
         </View>
 
@@ -153,9 +157,12 @@ export default function SyncScreen({ onBack }: Props) {
           <Text style={styles.backBtnText}>{t('sync.back')}</Text>
         </TouchableOpacity>
 
-        <Text style={styles.tip}>
-          💡 ZCash uses compact block sync — your spending key never leaves this device.
-        </Text>
+        <View style={styles.tipRow}>
+          <InfoIcon size={14} color={Colors.textMuted} />
+          <Text style={styles.tip}>
+            ZCash uses compact block sync — your spending key never leaves this device.
+          </Text>
+        </View>
       </View>
     </SafeAreaView>
   )
@@ -172,7 +179,6 @@ const styles = StyleSheet.create({
     width: 80, height: 80, borderRadius: 40,
     backgroundColor: Colors.zecGlow, alignItems: 'center', justifyContent: 'center',
   },
-  icon:     { fontSize: 40 },
   title:    { ...Typography.heading2, color: Colors.textPrimary, textAlign: 'center' },
   subtitle: { ...Typography.body, color: Colors.textSecondary, textAlign: 'center', lineHeight: 24 },
 
@@ -189,9 +195,10 @@ const styles = StyleSheet.create({
     borderRadius: Radius.lg, padding: Spacing.md,
     borderWidth: 1, borderColor: Colors.border, gap: 4,
   },
-  statRow:   { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 },
-  statLabel: { ...Typography.caption, color: Colors.textMuted, letterSpacing: 1 },
-  statValue: { ...Typography.bodyBold, color: Colors.textPrimary },
+  statRow:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 4 },
+  statLabel:    { ...Typography.caption, color: Colors.textMuted, letterSpacing: 1 },
+  statValue:    { ...Typography.bodyBold, color: Colors.textPrimary },
+  poolValueRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
 
   errorCard: {
     width: '100%', backgroundColor: Colors.errorBg,
@@ -207,9 +214,13 @@ const styles = StyleSheet.create({
   },
   backBtnText: { ...Typography.bodyBold, color: Colors.textSecondary },
 
+  tipRow: {
+    flexDirection: 'row', alignItems: 'flex-start', gap: 6,
+    paddingHorizontal: Spacing.lg,
+  },
   tip: {
     ...Typography.caption,
-    color: Colors.textMuted, textAlign: 'center',
-    lineHeight: 18, paddingHorizontal: Spacing.lg,
+    color: Colors.textMuted, flex: 1,
+    lineHeight: 18,
   },
 })

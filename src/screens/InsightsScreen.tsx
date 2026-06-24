@@ -13,6 +13,7 @@ import Svg, { Rect, Text as SvgText } from 'react-native-svg'
 import { useTranslation } from 'react-i18next'
 import { Colors, Spacing, Radius } from '../theme'
 import { BottomTabs, Tab } from '../components/BottomTabs'
+import { ArrowDownIcon, ArrowUpIcon, TrendUpIcon, TrendDownIcon } from '../components/Icons'
 import { getTransactions, Transaction } from '../services/zingo'
 import { getCurrentPrice, zecToUsd } from '../services/price'
 import { getWalletInfo } from '../services/zcash'
@@ -64,11 +65,11 @@ export default function InsightsScreen({ onTab }: Props) {
 
   const received = txs
     .filter(t => t.direction === 'received')
-    .reduce((s, t) => s + t.amount, 0)
+    .reduce((s, t) => s + Math.abs(t.amount), 0)
 
   const sent = txs
     .filter(t => t.direction === 'sent')
-    .reduce((s, t) => s + t.amount, 0)
+    .reduce((s, t) => s + Math.abs(t.amount), 0)
 
   const net = received - sent
   const netPositive = net >= 0
@@ -82,10 +83,18 @@ export default function InsightsScreen({ onTab }: Props) {
   })
 
   txs.forEach(tx => {
-    // tx.block used as approximate index (no timestamp in type); fall into last bucket
-    const idx = months.length - 1
-    if (tx.direction === 'received') months[idx].recv += tx.amount / 1e8
-    else months[idx].sent += tx.amount / 1e8
+    const txTime = tx.timestamp ? tx.timestamp * 1000 : now
+    const txDate = new Date(txTime)
+    const txMonth = txDate.getMonth()
+    const txYear  = txDate.getFullYear()
+    const idx = months.findIndex((_, i) => {
+      const d = new Date(now)
+      d.setMonth(d.getMonth() - (5 - i))
+      return d.getMonth() === txMonth && d.getFullYear() === txYear
+    })
+    const bucket = idx >= 0 ? idx : months.length - 1
+    if (tx.direction === 'received') months[bucket].recv += Math.abs(tx.amount) / 1e8
+    else months[bucket].sent += Math.abs(tx.amount) / 1e8
   })
 
   const maxVal = Math.max(...months.flatMap(m => [m.recv, m.sent]), 0.0001)
@@ -128,7 +137,7 @@ export default function InsightsScreen({ onTab }: Props) {
               <View style={[styles.statCard, styles.statCardReceive]}>
                 <View style={styles.statHeader}>
                   <View style={styles.statIconReceive}>
-                    <Text style={styles.statIconText}>↓</Text>
+                    <ArrowDownIcon size={12} color="#fff" />
                   </View>
                   <Text style={styles.statLabelReceive}>{t('insights.received')}</Text>
                 </View>
@@ -139,7 +148,7 @@ export default function InsightsScreen({ onTab }: Props) {
               <View style={[styles.statCard, styles.statCardSend]}>
                 <View style={styles.statHeader}>
                   <View style={styles.statIconSend}>
-                    <Text style={styles.statIconText}>↑</Text>
+                    <ArrowUpIcon size={12} color="#fff" />
                   </View>
                   <Text style={styles.statLabelSend}>{t('insights.sent')}</Text>
                 </View>
@@ -151,7 +160,9 @@ export default function InsightsScreen({ onTab }: Props) {
             {/* Net Flow */}
             <View style={styles.netFlowCard}>
               <View style={styles.netFlowLeft}>
-                <Text style={{ fontSize: 18 }}>{netPositive ? '📈' : '📉'}</Text>
+                {netPositive
+                  ? <TrendUpIcon size={20} color={Colors.success} />
+                  : <TrendDownIcon size={20} color={Colors.error} />}
                 <Text style={styles.netFlowLabel}>{t('insights.netFlow')}</Text>
               </View>
               <View style={styles.netFlowRight}>

@@ -102,8 +102,11 @@ export function startSync(): Promise<{ ok: boolean }> {
 }
 
 export function isValidZecAddress(addr: string): boolean {
-  if (addr.startsWith('u1') && addr.length >= 43) return true
-  if (addr.startsWith('t1') && addr.length === 35) return true
-  if (addr.startsWith('zs1') && addr.length >= 43) return true
+  const a = addr.trim().replace(/\s/g, '')
+  if (a.length < 20) return false
+  // Unified (u1), Sapling (zs1), Transparent (t1/t3) — let server validate fully
+  if (/^u1[a-z0-9]+$/.test(a)) return true
+  if (/^zs1[a-z0-9]+$/.test(a)) return true
+  if (/^t[13][a-zA-Z0-9]+$/.test(a)) return true
   return false
 }

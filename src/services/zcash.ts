@@ -32,13 +32,20 @@ export async function saveWalletInfo(info: WalletInfo): Promise<void> {
   ])
 }
 
+// Screenshot mode: return mock wallet when SecureStore is empty
+const MOCK_WALLET: WalletInfo = {
+  address: 'u1l9f0l4348disf3maex53mvkosnyahg3tq3m4s3mmpghg3l4c2ld3wqknkj70n5r7t29qgz3mn',
+  ufvk: 'uview1qkccjqk5qhf8c8q5znymr0h8n7c5zjknj6wjujhd0s0r4mfdx9l4g0fz5ngrfkg',
+  birthday: 2100000,
+}
+
 export async function getWalletInfo(): Promise<WalletInfo | null> {
   const [address, ufvk, birthdayStr] = await Promise.all([
     SecureStore.getItemAsync(ADDR_KEY, SECURE_OPTIONS),
     SecureStore.getItemAsync(UFVK_KEY, SECURE_OPTIONS),
     SecureStore.getItemAsync(BIRTHDAY_KEY, SECURE_OPTIONS),
   ])
-  if (!address || !ufvk) return null
+  if (!address || !ufvk) return __DEV__ ? MOCK_WALLET : null
   return { address, ufvk, birthday: Number(birthdayStr) || 3340000 }
 }
 

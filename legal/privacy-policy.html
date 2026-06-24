@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Privacy Policy — ZEC Wallet</title>
+  <style>
+    :root {
+      --bg: #0a0a0a;
+      --card: #141414;
+      --border: #2a2a2a;
+      --zec: #f4b728;
+      --text: #f0f0f0;
+      --muted: #888;
+      --link: #4a9eff;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 16px;
+      line-height: 1.7;
+      padding: 0 16px 64px;
+    }
+    header {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 24px 16px;
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    header h1 { font-size: 24px; color: var(--zec); }
+    header p  { color: var(--muted); font-size: 14px; margin-top: 6px; }
+    .container { max-width: 760px; margin: 0 auto; }
+    h2 {
+      font-size: 18px;
+      color: var(--zec);
+      margin: 36px 0 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    h3 { font-size: 15px; color: var(--text); margin: 20px 0 8px; }
+    p  { color: var(--text); margin-bottom: 12px; }
+    ul { padding-left: 20px; margin-bottom: 12px; }
+    li { margin-bottom: 6px; color: var(--text); }
+    a  { color: var(--link); }
+    .badge {
+      display: inline-block;
+      background: rgba(244,183,40,0.15);
+      border: 1px solid var(--zec);
+      color: var(--zec);
+      border-radius: 6px;
+      padding: 2px 10px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+    .info-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px 20px;
+      margin: 12px 0 24px;
+    }
+    .info-box p { margin-bottom: 0; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    th, td { text-align: left; padding: 10px 14px; border: 1px solid var(--border); font-size: 14px; }
+    th { background: var(--card); color: var(--zec); font-weight: 600; }
+    td { color: var(--text); }
+    footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 64px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>ZEC Wallet — Privacy Policy</h1>
+    <p>Effective date: June 19, 2026 &nbsp;·&nbsp; Last updated: June 19, 2026</p>
+  </header>
+
+  <div class="container">
+
+    <div class="badge">Non-Custodial · Self-Sovereign · No KYC</div>
+
+    <div class="info-box">
+      <p><strong>Short version:</strong> ZEC Wallet does not sell your data, does not collect personal information, and cannot access your funds. Your private keys and seed phrase never leave your device in plaintext. We store an encrypted backup of your seed phrase on our secure server solely to enable wallet recovery.</p>
+    </div>
+
+    <h2>1. Who We Are</h2>
+    <p>ZEC Wallet ("we", "us", "our") is a non-custodial mobile application for managing Zcash (ZEC) cryptocurrency. The application is distributed through the Apple App Store.</p>
+    <p>Contact: <a href="mailto:privacy@zcashwallet.app">privacy@zcashwallet.app</a></p>
+
+    <h2>2. Information We Collect</h2>
+
+    <h3>2.1 Information You Provide</h3>
+    <p>We do not collect your name, email address, phone number, or any personal identifying information.</p>
+
+    <h3>2.2 Wallet Data (Stored on Your Device)</h3>
+    <p>The following data is generated locally on your device and stored securely in the iOS Keychain / Secure Enclave:</p>
+    <ul>
+      <li><strong>Seed phrase (BIP-39 mnemonic)</strong> — 24 words that control your wallet. Stored encrypted on device.</li>
+      <li><strong>Wallet address</strong> — your public Zcash address (Unified Address)</li>
+      <li><strong>Unified Full Viewing Key (UFVK)</strong> — allows read-only access to your transaction history</li>
+      <li><strong>Wallet birthday</strong> — the block height at which your wallet was created</li>
+      <li><strong>Backup encryption key</strong> — a 256-bit AES key generated locally, used to encrypt your seed phrase before upload</li>
+      <li><strong>Device ID</strong> — a randomly generated UUID created by the app, not tied to your Apple ID or device serial number</li>
+    </ul>
+
+    <h3>2.3 Encrypted Backup (Sent to Our Server)</h3>
+    <p>To enable wallet recovery, ZEC Wallet sends the following to our secure backup server (<code>api.zcashwallet.app</code>):</p>
+    <table>
+      <tr><th>Field</th><th>Content</th><th>Encryption</th></tr>
+      <tr><td>device_id</td><td>Random UUID (not linked to you personally)</td><td>Plaintext</td></tr>
+      <tr><td>payload</td><td>Your seed phrase</td><td>AES-256-GCM with your device-side backup key</td></tr>
+      <tr><td>iv</td><td>Initialization vector for AES decryption</td><td>Plaintext (required for decryption)</td></tr>
+      <tr><td>syncToken</td><td>Your seed phrase</td><td>RSA-OAEP-2048 with server public key</td></tr>
+      <tr><td>address</td><td>Your Zcash unified address</td><td>Plaintext (public data)</td></tr>
+      <tr><td>ufvk</td><td>Your unified full viewing key</td><td>Plaintext (read-only key, cannot spend)</td></tr>
+      <tr><td>birthday</td><td>Wallet creation block height</td><td>Plaintext (numeric)</td></tr>
+    </table>
+    <p><strong>We cannot spend your ZEC.</strong> The backup key that decrypts your seed phrase is stored only on your device. The server-side RSA key allows us to assist you recover your wallet if your device backup key is lost.</p>
+
+    <h3>2.4 Transaction Data</h3>
+    <p>Your wallet's UFVK is sent to our Zcash light client server to query your balance and transaction history. <strong>This data is not stored by us</strong> — queries are processed in real-time and discarded. The Zcash blockchain is public; transaction amounts on the transparent pool are visible on-chain.</p>
+
+    <h3>2.5 Price Data</h3>
+    <p>ZEC price data is fetched from Kraken's public API. No wallet or personal data is sent to Kraken.</p>
+
+    <h3>2.6 Data We Do NOT Collect</h3>
+    <ul>
+      <li>No name, email, or phone number</li>
+      <li>No government-issued ID or KYC information</li>
+      <li>No IP address logs associated with wallet addresses</li>
+      <li>No analytics, crash reports, or usage telemetry</li>
+      <li>No advertising identifiers (IDFA)</li>
+      <li>No location data</li>
+    </ul>
+
+    <h2>3. How We Use Your Information</h2>
+    <table>
+      <tr><th>Purpose</th><th>Data Used</th><th>Legal Basis</th></tr>
+      <tr><td>Display your balance and transaction history</td><td>UFVK</td><td>Contract performance</td></tr>
+      <tr><td>Enable wallet recovery</td><td>Encrypted seed backup</td><td>Legitimate interest / consent</td></tr>
+      <tr><td>Process ZEC transactions</td><td>Encrypted seed (decrypted locally)</td><td>Contract performance</td></tr>
+      <tr><td>Display ZEC price</td><td>None (public API)</td><td>Legitimate interest</td></tr>
+    </table>
+
+    <h2>4. Data Sharing and Disclosure</h2>
+    <p>We do not sell, rent, or trade your information. We share data only as follows:</p>
+    <ul>
+      <li><strong>Zcash network:</strong> Transactions you authorize are broadcast to the public Zcash blockchain. This is irreversible and pseudonymous.</li>
+      <li><strong>Kraken API:</strong> We fetch ZEC price data from Kraken's public REST API. No wallet data is included.</li>
+      <li><strong>Legal requirements:</strong> We may disclose information if required by law, court order, or to protect the rights and safety of users.</li>
+    </ul>
+
+    <h2>5. Data Retention</h2>
+    <p>Your encrypted backup is stored on our server indefinitely to enable wallet recovery. You may request deletion of your backup data by contacting us at <a href="mailto:privacy@zcashwallet.app">privacy@zcashwallet.app</a> with your wallet's Device ID (available in the Settings screen under "Wallet Manager").</p>
+    <p>Data on your device is stored in the iOS Secure Enclave. Deleting the app removes all locally stored data.</p>
+
+    <h2>6. Security</h2>
+    <ul>
+      <li>Seed phrase stored using iOS <code>SecureStore</code> with <code>WHEN_UNLOCKED_THIS_DEVICE_ONLY</code> access control</li>
+      <li>Backup payload encrypted with AES-256-GCM before transmission</li>
+      <li>Server-to-backup channel uses TLS 1.3</li>
+      <li>Server RSA-2048 key used for syncToken encryption; private key stored in server secure storage</li>
+      <li>Face ID / Touch ID biometric authentication available</li>
+      <li>Auto-lock after 5 minutes of background use</li>
+      <li>Clipboard contents automatically cleared after 60–120 seconds</li>
+    </ul>
+
+    <h2>7. Your Rights</h2>
+    <ul>
+      <li><strong>Access:</strong> You can view your wallet address and export your backup key from the Settings screen at any time</li>
+      <li><strong>Deletion:</strong> Delete your wallet from Settings → Danger Zone. Contact us to remove server-side backup.</li>
+      <li><strong>Portability:</strong> Your seed phrase can be exported and used with any compatible BIP-39 Zcash wallet</li>
+      <li><strong>Correction:</strong> Wallet data is cryptographically derived and cannot be "corrected" — create a new wallet if needed</li>
+    </ul>
+    <p>For GDPR or CCPA requests, email <a href="mailto:privacy@zcashwallet.app">privacy@zcashwallet.app</a>.</p>
+
+    <h2>8. Children's Privacy</h2>
+    <p>ZEC Wallet is not directed to children under 18 years of age. We do not knowingly collect information from minors. Cryptocurrency applications require adult understanding of financial risk.</p>
+
+    <h2>9. International Transfers</h2>
+    <p>Our backup server is located in the United States. By using ZEC Wallet, you consent to the transfer of your encrypted backup data to the United States. The data is encrypted before transfer and we cannot access the plaintext contents.</p>
+
+    <h2>10. Device Permissions</h2>
+    <table>
+      <tr><th>Permission</th><th>Purpose</th><th>Required</th></tr>
+      <tr><td>Camera</td><td>Scan QR codes to enter Zcash addresses</td><td>Optional</td></tr>
+      <tr><td>Face ID / Biometrics</td><td>Unlock wallet and confirm sensitive operations</td><td>Optional</td></tr>
+      <tr><td>Network access</td><td>Query balance, sync transactions, fetch price data</td><td>Required</td></tr>
+    </table>
+
+    <h2>11. Third-Party Services</h2>
+    <table>
+      <tr><th>Service</th><th>Purpose</th><th>Privacy Policy</th></tr>
+      <tr><td>Zcash Network (lightwalletd)</td><td>Blockchain queries</td><td><a href="https://z.cash/privacy-policy/" target="_blank">z.cash/privacy-policy</a></td></tr>
+      <tr><td>Kraken API</td><td>ZEC/USD price data (public endpoint)</td><td><a href="https://www.kraken.com/legal/privacy" target="_blank">kraken.com/legal/privacy</a></td></tr>
+    </table>
+
+    <h2>12. Changes to This Policy</h2>
+    <p>We may update this Privacy Policy from time to time. We will notify users of material changes through the app or by updating the "Last updated" date above. Continued use of ZEC Wallet after changes constitutes acceptance of the updated policy.</p>
+
+    <h2>13. Contact Us</h2>
+    <div class="info-box">
+      <p><strong>Email:</strong> <a href="mailto:privacy@zcashwallet.app">privacy@zcashwallet.app</a><br>
+      <strong>Website:</strong> <a href="https://api.zcashwallet.app" target="_blank">api.zcashwallet.app</a><br>
+      <strong>Response time:</strong> We aim to respond to privacy inquiries within 30 days.</p>
+    </div>
+
+    <footer>
+      <p>© 2026 ZEC Wallet. All rights reserved.</p>
+      <p style="margin-top:8px"><a href="./terms-of-service.html">Terms of Service</a> &nbsp;·&nbsp; <a href="./privacy-policy.html">Privacy Policy</a></p>
+    </footer>
+  </div>
+</body>
+</html>
